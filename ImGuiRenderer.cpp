@@ -80,7 +80,14 @@ void ImGuiRenderer::renderDrawList(ImDrawData *draw_data)
     GLint last_texture; glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
     GLint last_array_buffer; glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &last_array_buffer);
     GLint last_element_array_buffer; glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &last_element_array_buffer);
-    GLint last_vertex_array; glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &last_vertex_array);
+    GLint last_vertex_array;
+
+#if defined(Q_OS_HTML5) or defined(Q_OS_WASM) or defined(__EMSCRIPTEN__)
+    last_vertex_array = g_VaoHandle;
+#else
+    glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &last_vertex_array);
+#endif
+
     GLint last_blend_src_rgb; glGetIntegerv(GL_BLEND_SRC_RGB, &last_blend_src_rgb);
     GLint last_blend_dst_rgb; glGetIntegerv(GL_BLEND_DST_RGB, &last_blend_dst_rgb);
     GLint last_blend_src_alpha; glGetIntegerv(GL_BLEND_SRC_ALPHA, &last_blend_src_alpha);
@@ -193,8 +200,37 @@ bool ImGuiRenderer::createDeviceObjects()
     GLint last_texture, last_array_buffer, last_vertex_array;
     glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
     glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &last_array_buffer);
-    glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &last_vertex_array);
 
+#if defined(Q_OS_HTML5) or defined(Q_OS_WASM) or defined(__EMSCRIPTEN__)
+    last_vertex_array = g_VaoHandle;
+#else
+    glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &last_vertex_array);
+#endif
+
+#if defined(Q_OS_HTML5) or defined(Q_OS_WASM) or defined(__EMSCRIPTEN__)
+    const GLchar *vertex_shader =
+        "attribute vec4 Position;\n"
+        "attribute vec2 UV;\n"
+        "attribute vec4 Color;\n"
+        "varying vec2 Frag_UV;\n"
+        "varying vec4 Frag_Color;\n"
+        "uniform mat4 ProjMtx;\n"
+        "void main() {\n"
+        "    Frag_UV = UV;\n"
+        "    Frag_Color = Color;\n"
+        "    gl_Position = ProjMtx * vec4(Position.xy, 0.0, 1.0);\n"
+        "}\n";
+
+    const GLchar* fragment_shader =
+        "precision mediump float;\n"
+        "uniform sampler2D Texture;\n"
+        "varying highp vec2 Frag_UV;\n"
+        "varying highp vec4 Frag_Color;\n"
+        "void main() {\n"
+        "    vec4 c = Frag_Color * texture2D(Texture, Frag_UV);\n"
+        "    gl_FragColor = vec4(c.rgb, c.a * 1.0);\n"
+        "}\n";
+#else
     const GLchar *vertex_shader =
         "#version 330\n"
         "uniform mat4 ProjMtx;\n"
@@ -220,6 +256,7 @@ bool ImGuiRenderer::createDeviceObjects()
         "{\n"
         "	Out_Color = Frag_Color * texture( Texture, Frag_UV.st);\n"
         "}\n";
+#endif
 
     g_ShaderHandle = glCreateProgram();
     g_VertHandle = glCreateShader(GL_VERTEX_SHADER);
@@ -244,6 +281,7 @@ bool ImGuiRenderer::createDeviceObjects()
     glGenVertexArrays(1, &g_VaoHandle);
     glBindVertexArray(g_VaoHandle);
     glBindBuffer(GL_ARRAY_BUFFER, g_VboHandle);
+    // see https://gist.github.com/blockspacer/e1f924f74dc903f7e317ef429353fa34#file-singlefileopengltex-cpp-L146
     glEnableVertexAttribArray(g_AttribLocationPosition);
     glEnableVertexAttribArray(g_AttribLocationUV);
     glEnableVertexAttribArray(g_AttribLocationColor);

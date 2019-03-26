@@ -1,0 +1,7 @@
+*.js_plugin_import.cpp
+*.wasm
+moc_*
+/qtloader.js
+/qtlogo.svg
+/demo-widget.html
+/demo-widget.js

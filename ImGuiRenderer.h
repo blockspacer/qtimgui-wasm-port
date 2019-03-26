@@ -1,5 +1,12 @@
 #pragma once
 
+#if defined(Q_OS_HTML5) or defined(Q_OS_WASM) or defined(__EMSCRIPTEN__)
+
+#define USE_GL_ES2
+#include <GLES2/gl2.h>
+#include "emscripten.h"
+#endif
+
 #include <QOpenGLExtraFunctions>
 #include <QObject>
 #include <QPoint>
