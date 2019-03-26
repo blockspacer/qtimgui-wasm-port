@@ -1,23 +1,99 @@
 #include <QtImGui.h>
 #include <imgui.h>
+#include "litehtml.h"
+#include "container_qt5_imgui.h"
+
 #include <QGuiApplication>
 #include <QTimer>
 #include <QSurfaceFormat>
 #include <QOpenGLWindow>
 #include <QOpenGLExtraFunctions>
+#include <QFile>
+#include <QDebug>
+
 
 class DemoWindow : public QOpenGLWindow, private QOpenGLExtraFunctions
 {
+private:
+bool todo = false;
+litehtml::document::ptr doc{};
+std::unique_ptr<container_qt5> cont;
+litehtml::context ctxt{};
+
 protected:
     void initializeGL() override
     {
         initializeOpenGLFunctions();
         QtImGui::initialize(this);
+
     }
+
     void paintGL() override
     {
         QtImGui::newFrame();
 
+        if(!todo) {
+          // TODO >>>
+          QFile master_css_fh("/home/avakimov_am/job/qtimgui/master.css");
+          master_css_fh.open(QIODevice::ReadOnly);
+          QByteArray master_css = master_css_fh.readAll();
+          //ctxt.load_master_stylesheet("/home/pierre/projects/litehtml/include/master.css");
+          qDebug() << master_css;
+          ctxt.load_master_stylesheet(master_css.constData());
+
+          cont = std::make_unique<container_qt5>();
+
+          //auto doc = litehtml::document::createFromUTF8("<html><body><ul><li>One</li><li>Zwei</li><li>Trois</li></ul></body></html>", &c, &ctxt);
+          //auto doc = litehtml::document::createFromUTF8("<html><body><p>Line1.1 Line1.2<br />Line2</p><ul><li>One</li><li>Zwei</li><li>Trois</li></ul></body></html>", &c, &ctxt);
+          doc = litehtml::document::createFromUTF8("<html><body><div style='background:green;width:30px;height:30px'></div><a href=\"http://linuxfr.org/\"></a></body></html>", cont.get(), &ctxt);
+          //auto doc = litehtml::document::createFromUTF8("<html><body><table><tr><th>H1</th><th>H2</th></tr><tr><td>C1.1</td><td>C1.2</td></tr><tr><td>C2.1</td><td>C2.2</td></tr></table></body></html>", &c, &ctxt);
+          cont->set_document(doc);
+          todo = true;
+        }
+
+
+     ImGui::SetNextWindowSize(ImVec2(800,800), ImGuiSetCond_FirstUseEver);
+    if (ImGui::Begin("HTML"))
+    {
+      /*if (ImGui::Button("refresh")) first = true;
+      ImGui::SameLine();
+      ImGui::InputText("Host", host, sizeof(host));
+      ImGui::SameLine();
+      ImGui::InputText("Path", path, sizeof(path));*/
+
+      if (ImGui::BeginChildFrame(0123, ImVec2(0, 0)))
+      {
+        litehtml::position clip(0, 0, 1024, 1024);
+        //m_document->draw((litehtml::uint_ptr)this, 0, 0, &clip);
+
+        if(doc) {
+          doc->render(1024); // TODO
+          doc->draw((litehtml::uint_ptr)this, 0, 0, nullptr);
+          cont->render();
+        }
+
+        ImVec2 mouse_pos = ImGui::GetMousePos();
+        ImVec2 win_pos = ImGui::GetWindowPos();
+        mouse_pos.x = mouse_pos.x - win_pos.x;
+        mouse_pos.y = mouse_pos.y - win_pos.y;
+        std::vector<litehtml::position> redraw_boxes;
+        if (ImGui::IsMouseClicked(0))
+        {
+          doc->on_lbutton_down(mouse_pos.x, mouse_pos.y, mouse_pos.x, mouse_pos.y, redraw_boxes);
+        }
+        if (ImGui::IsMouseReleased(0))
+        {
+          doc->on_lbutton_up(mouse_pos.x, mouse_pos.y, mouse_pos.x, mouse_pos.y, redraw_boxes);
+        }
+        doc->on_mouse_over(mouse_pos.x, mouse_pos.y, mouse_pos.x, mouse_pos.y, redraw_boxes);
+
+
+      }
+      ImGui::EndChildFrame();
+    }
+    ImGui::End();
+
+#ifdef nope
         // 1. Show a simple window
         // Tip: if we don't call ImGui::Begin()/ImGui::End() the widgets appears in a window automatically called "Debug"
         {
@@ -45,7 +121,7 @@ protected:
             ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiSetCond_FirstUseEver);
             ImGui::ShowTestWindow();
         }
-
+#endif
         // Do render before ImGui UI is rendered
         glViewport(0, 0, width(), height());
         glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
