@@ -3,6 +3,7 @@
 #include <QtImGui.h>
 #include <imgui.h>
 #include "litehtml.h"
+#include "crc32.h"
 
 #include <QGuiApplication>
 #include <QTimer>
@@ -11,6 +12,13 @@
 #include <QOpenGLExtraFunctions>
 #include <QFile>
 #include <QDebug>
+#include <QMap>
+
+struct Image {
+  ImTextureID textureId;
+  int w;
+  int h;
+};
 
 /**
  * @todo write docs
@@ -19,6 +27,9 @@ class container_qt5 : public litehtml::document_container
 {
 private:
     std::shared_ptr< litehtml::document > _doc;
+    //QMap<quint32, Image> m_images;
+    QHash<QString, Image> m_images;
+    GLuint my_opengl_texture;
 
 protected:
     void mouseMoveEvent(QMouseEvent *event);

@@ -1,4 +1,8 @@
 #include "container_qt5_imgui.h"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 #include "imgui_internal.h"
 #include "ImGuiRenderer.h"
 #include <QDebug>
@@ -7,6 +11,20 @@
 #include <QPainter>
 #include <QMouseEvent>
 #include <QDesktopServices>
+#include <QDataStream>
+
+/*static qint64 hash(const QString & str)
+{
+  QByteArray hash = QCryptographicHash::hash(
+    QByteArray::fromRawData((const char*)str.utf16(), str.length()*2),
+    QCryptographicHash::Md5
+  );
+  Q_ASSERT(hash.size() == 16);
+  QDataStream stream(&hash);
+  qint64 a, b;
+  stream >> a >> b;
+  return a ^ b;
+}*/
 
 #ifdef nope
 struct ImGuiFont : public ImFont
@@ -374,7 +392,8 @@ void container_qt5::draw_borders(litehtml::uint_ptr hdc, const litehtml::borders
 
 void container_qt5::draw_background(litehtml::uint_ptr hdc, const litehtml::background_paint& bg)
 {
-    //qDebug() << "draw_background" << __FUNCTION__;
+    //qDebug() << "draw_background" << __FUNCTION__ << bg.image.c_str();
+    // draw_background draw_background https://images2017.cnblogs.com/blog/847289/201712/847289-20171207174342691-530707282.png
 
     ImGuiWindow* win = ImGui::GetCurrentWindow();
     ImVec2 a(win->Pos.x + bg.clip_box.left(), win->Pos.y + bg.clip_box.top());
@@ -385,63 +404,142 @@ void container_qt5::draw_background(litehtml::uint_ptr hdc, const litehtml::back
       win->DrawList->AddRectFilled(a, b, col);
       return;
     }
-/*
-    auto iter = m_images.find(crc32(bg.image.c_str()));
-    if (!iter.isValid()) return;
+
+    // TODO: https://github.com/nem0/lumixengine_html/blob/e2da43e704ad0ad474c8ecafc16fcae4a51e8aff/src/editor/plugins.cpp#L162
+    //Crc32 crc32;
+    //auto iter = m_images.find(crc32.calculateFromData(bg.image.c_str()));
+    auto iter = m_images.find(bg.image.c_str());
+    if (iter == m_images.end()) {
+      qDebug() << "iter == m_images.end()" << __FUNCTION__;
+      return;
+    }
 
     auto img = iter.value();
 
     switch (bg.repeat)
     {
-      case litehtml::background_repeat_no_repeat: win->DrawList->AddImage(img.texture, a, b); break;
+      case litehtml::background_repeat_no_repeat: win->DrawList->AddImage(img.textureId, a, b); break;
       case litehtml::background_repeat_repeat_x:
       {
         ImVec2 uv((b.x - a.x) / img.w, 0);
-        win->DrawList->AddImage(img.texture, a, b, ImVec2(0, 0), uv);
+        //glBindTexture(GL_TEXTURE_2D, my_opengl_texture);
+        //ImGui::GetWindowDrawList()->PushTextureID(img.textureId);
+        win->DrawList->AddImage(img.textureId, a, b, ImVec2(0, 0), uv);
+        //ImGui::GetWindowDrawList()->PopTextureID();
         break;
       }
       break;
       case litehtml::background_repeat_repeat_y:
       {
         ImVec2 uv(0, (b.y - a.y) / img.h);
-        win->DrawList->AddImage(img.texture, a, b, ImVec2(0, 0), uv);
+        //glBindTexture(GL_TEXTURE_2D, my_opengl_texture);
+        //ImGui::GetWindowDrawList()->PushTextureID(img.textureId);
+        win->DrawList->AddImage(img.textureId, a, b, ImVec2(0, 0), uv);
+        //ImGui::GetWindowDrawList()->PopTextureID();
         break;
       }
       case litehtml::background_repeat_repeat:
       {
         ImVec2 uv((b.x - a.x) / img.w, (b.y - a.y) / img.h);
-        win->DrawList->AddImage(img.texture, a, b, ImVec2(0, 0), uv);
+        //glBindTexture(GL_TEXTURE_2D, my_opengl_texture);
+        //ImGui::GetWindowDrawList()->PushTextureID(img.textureId);
+        win->DrawList->AddImage(img.textureId, a, b, ImVec2(0, 0), uv);
+        //ImGui::GetWindowDrawList()->PopTextureID();
         break;
       }
-    }*/
+    }
 }
 
 void container_qt5::get_image_size(const litehtml::tchar_t* src, const litehtml::tchar_t* baseurl, litehtml::size& sz)
 {
-    qDebug() << __FUNCTION__;
+    // qDebug() << __FUNCTION__ << src;
+    // https://images2017.cnblogs.com/blog/847289/201712/847289-20171207174342691-530707282.png
 
-    /*auto iter = m_images.find(crc32(src));
-    if (iter.isValid())
+    //Crc32 crc32;
+
+    //auto iter = m_images.find(crc32.calculateFromData(src));
+    auto iter = m_images.find(src);
+    if (iter != m_images.end())
     {
       sz.width = iter.value().w;
       sz.height = iter.value().h;
+      //qDebug() << "sz.width" << sz.width;
+      //qDebug() << "sz.height" << sz.height;
     }
     else
     {
       sz.width = sz.height = 100;
-    }*/
+    }
 }
 
 void container_qt5::load_image(const litehtml::tchar_t* src, const litehtml::tchar_t* baseurl, bool redraw_on_ready)
 {
-    qDebug() << __FUNCTION__;
+    //qDebug() << __FUNCTION__ << src;
+    // load_image https://images2017.cnblogs.com/blog/847289/201712/847289-20171207174342691-530707282.png
 
-    /*int channels;
+    QFile qFile(src);
+
+        if(!qFile.exists())
+        {
+          qDebug() << "nonexistent file " << qFile.fileName();
+          return;
+        }
+
+        if(!qFile.open(QIODevice::ReadOnly))
+        {
+            qDebug() << "Can`t read data from " << qFile.fileName();
+           return;
+        }
+
+        QByteArray fileData = qFile.readAll();
+
+        if(!fileData.size())
+        {
+            qDebug() << "Empty data from " << qFile.fileName();
+          return;
+        }
+
+        qFile.close();
+
+    unsigned int bufSize = fileData.size();
+    //unsigned char* data = new unsigned char[bufSize];
+    unsigned char* data = (unsigned char*)fileData.data();
+    //download(m_host, src, &data);
+    int channels;
     Image img;
-    stbi_uc* pixels = stbi_load_from_memory(&data[0], data.size(), &img.w, &img.h, &channels, 4);
-    if (!pixels) return;
-    img.texture = ri->createTexture(src, pixels, img.w, img.h);
-    m_images.insert(crc32(src), img);*/
+    stbi_uc* pixels = stbi_load_from_memory(&data[0], bufSize, &img.w, &img.h, &channels, 4);
+    if (!pixels) {
+    qDebug() << "Empty pixels for " << qFile.fileName();
+      return;
+    }
+
+    // https://github.com/nem0/LumixEngine/blob/f77a0b6a899be4736f0ce26133bbe8061a3828f1/src/renderer/editor/plugins.cpp#L2202
+    //img.textureId = ri->createTexture(src, pixels, img.w, img.h);
+        // Turn the RGBA pixel data into an OpenGL texture:
+
+        /*glGenTextures(1, &my_opengl_texture);
+        glBindTexture(GL_TEXTURE_2D, my_opengl_texture);
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.w, img.h, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+*/
+
+    //glGetIntegerv(GL_TEXTURE_BINDING_2D, &my_opengl_texture);
+
+    glGenTextures(1, &my_opengl_texture);
+    img.textureId = (ImTextureID)my_opengl_texture;
+    glBindTexture(GL_TEXTURE_2D, my_opengl_texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.w, img.h, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+
+        // Now that we have an OpenGL texture, assuming our imgui rendering function (imgui_impl_xxx.cpp file) takes GLuint as ImTextureID, we can display it:
+        //ImGui::Image((void*)(intptr_t)my_opengl_texture, ImVec2(img.w, img.h));
+// <<<<
+
+    //Crc32 crc32;
+    //m_images.insert(crc32.calculateFromData(src), img);
+    m_images.insert(src, img);
 }
 
 void container_qt5::draw_list_marker(litehtml::uint_ptr hdc, const litehtml::list_marker& marker)
@@ -507,6 +605,11 @@ int container_qt5::pt_to_px(int pt)
 
 void container_qt5::draw_text(litehtml::uint_ptr hdc, const litehtml::tchar_t* text, litehtml::uint_ptr hFont, litehtml::web_color color, const litehtml::position& pos)
 {
+// TODO: try cairo_font https://github.com/prepare/other_bsd_html_projects/blob/543f9b5aae9a474c07173b1c33b1fc48bb84916a/litehtml-read-only/containers/cairo/cairo_container.cpp
+// TODO: try QFont https://github.com/eco747/foton/blob/2f9b68ca0ccc2f087f769e52f8caa30806c9484c/qhtmlrenderer.cpp#L80
+// https://github.com/pinaraf/litehtml-qt/blob/a39ddeca173e88cf2572f6b8fdc31f0bfd27c0d3/containers/qt5/container_qt5.cpp#L311
+
+
     //qDebug() << __FUNCTION__;
     /*QPainter *painter = (QPainter *) hdc;
     QFont *font = (QFont *) hFont;

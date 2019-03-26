@@ -4,5 +4,7 @@
         <file>fa-regular-400.ttf</file>
         <file>DroidSans.ttf</file>
         <file>master.css</file>
+        <file>test.png</file>
+        <file>test2.png</file>
     </qresource>
 </RCC>

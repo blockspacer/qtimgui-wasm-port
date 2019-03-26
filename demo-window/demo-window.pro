@@ -14,10 +14,13 @@ INCLUDEPATH  += \
 
 HEADERS += \
     ../container_qt5_imgui.h
+    ../stb_image.h
+    ../crc32.h \
 
 SOURCES += \
     demo-window.cpp \
     ../container_qt5_imgui.cpp \
+    ../crc32.cpp \
     ../litehtml/src/gumbo/attribute.c \
     ../litehtml/src/gumbo/char_ref.c \
     ../litehtml/src/gumbo/error.c \
