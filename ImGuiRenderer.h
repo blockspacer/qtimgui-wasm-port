@@ -12,6 +12,9 @@
 #include <QPoint>
 #include <imgui.h>
 #include <memory>
+#include <cstring>
+#include <string>
+#include <map>
 
 class QMouseEvent;
 class QWheelEvent;
@@ -40,9 +43,10 @@ public:
     static ImGuiRenderer *instance();
 
 public:
-  static ImFont* customFont;
+  static ImFont* getFont(const QString& fontName) noexcept {
+    return fontname2font[fontName];
+  }
 
-  bool createFontsTexture2();
 private:
     ImGuiRenderer() {}
 
@@ -54,6 +58,9 @@ private:
     bool createFontsTexture();
     bool createDeviceObjects();
 
+private:
+    static std::map<QString, QString> fontname2path;
+    static std::map<QString, ImFont*> fontname2font;
     std::unique_ptr<WindowWrapper> m_window;
     double       g_Time = 0.0f;
     bool         g_MousePressed[3] = { false, false, false };

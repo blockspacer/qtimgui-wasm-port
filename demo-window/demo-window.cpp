@@ -3,6 +3,8 @@
 #include "litehtml.h"
 #include "container_qt5_imgui.h"
 
+#include <memory>
+
 #include <QGuiApplication>
 #include <QTimer>
 #include <QSurfaceFormat>
@@ -34,10 +36,10 @@ protected:
 
         if(!todo) {
           // TODO >>>
-          QFile master_css_fh("/home/avakimov_am/job/qtimgui/master.css");
+          QFile master_css_fh("://master.css");
           master_css_fh.open(QIODevice::ReadOnly);
           QByteArray master_css = master_css_fh.readAll();
-          //ctxt.load_master_stylesheet("/home/pierre/projects/litehtml/include/master.css");
+          //ctxt.load_master_stylesheet("://master.css");
           qDebug() << master_css;
           ctxt.load_master_stylesheet(master_css.constData());
 
@@ -45,7 +47,8 @@ protected:
 
           //auto doc = litehtml::document::createFromUTF8("<html><body><ul><li>One</li><li>Zwei</li><li>Trois</li></ul></body></html>", &c, &ctxt);
           //auto doc = litehtml::document::createFromUTF8("<html><body><p>Line1.1 Line1.2<br />Line2</p><ul><li>One</li><li>Zwei</li><li>Trois</li></ul></body></html>", &c, &ctxt);
-          doc = litehtml::document::createFromUTF8("<html><body><div style='background:green;width:30px;height:30px'>text1</div><a href=\"http://linuxfr.org/\">text2</a></body></html>", cont.get(), &ctxt);
+          auto html = QString("<html><body><div style='background:green;width:30px;height:30px'>text1</div><a href=\"http://linuxfr.org/\">text2") + QChar(0xf2bb) + "</a></body></html>";
+          doc = litehtml::document::createFromUTF8(html.toLocal8Bit(), cont.get(), &ctxt);
           //auto doc = litehtml::document::createFromUTF8("<html><body><table><tr><th>H1</th><th>H2</th></tr><tr><td>C1.1</td><td>C1.2</td></tr><tr><td>C2.1</td><td>C2.2</td></tr></table></body></html>", &c, &ctxt);
           cont->set_document(doc);
           todo = true;
@@ -92,7 +95,7 @@ protected:
       ImGui::EndChildFrame();
     }
     ImGui::End();
-
+#define nope
 #ifdef nope
         // 1. Show a simple window
         // Tip: if we don't call ImGui::Begin()/ImGui::End() the widgets appears in a window automatically called "Debug"

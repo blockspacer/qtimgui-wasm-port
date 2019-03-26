@@ -65,7 +65,7 @@ static QColor getColor(const litehtml::web_color &color) {
     return QColor(color.red, color.green, color.blue, color.alpha);
 }
 
-static ImFont* imFont_;
+//static ImFont* imFont_;
 
 
 // Now for the real stuff
@@ -89,7 +89,7 @@ ImGuiIO& io = ImGui::GetIO();
 
 // TODO >>
 
-  imFont_ = QtImGui::ImGuiRenderer::customFont;// io.Fonts->AddFontFromFileTTF("/home/avakimov_am/job/qtimgui/DroidSans.ttf", 16.0f);
+  //imFont_ = QtImGui::ImGuiRenderer::getFont("Cousine Regular");//QtImGui::ImGuiRenderer::customFont;// io.Fonts->AddFontFromFileTTF("://DroidSans.ttf", 16.0f);
 
   //imFont_ = io.Fonts->AddFontFromMemoryTTF();
 //imFont_ = io.FontDefault;
@@ -281,7 +281,7 @@ static void setPenForBorder(QPainter *painter, const litehtml::border &border)
 
 void container_qt5::draw_borders(litehtml::uint_ptr hdc, const litehtml::borders& borders, const litehtml::position& draw_pos, bool root)
 {
-    qDebug() << __FUNCTION__ << " for root = " << root;
+    //qDebug() << __FUNCTION__ << " for root = " << root;
     /*QPainter *painter = (QPainter *) hdc;
     painter->save();
     QRect area = getRect(draw_pos);
@@ -374,7 +374,7 @@ void container_qt5::draw_borders(litehtml::uint_ptr hdc, const litehtml::borders
 
 void container_qt5::draw_background(litehtml::uint_ptr hdc, const litehtml::background_paint& bg)
 {
-    qDebug() << "draw_background" << __FUNCTION__;
+    //qDebug() << "draw_background" << __FUNCTION__;
 
     ImGuiWindow* win = ImGui::GetCurrentWindow();
     ImVec2 a(win->Pos.x + bg.clip_box.left(), win->Pos.y + bg.clip_box.top());
@@ -491,7 +491,7 @@ void container_qt5::draw_list_marker(litehtml::uint_ptr hdc, const litehtml::lis
 const litehtml::tchar_t* container_qt5::get_default_font_name() const
 {
     qDebug() << __FUNCTION__;
-    return "Droid Sans";//Times New Roman"; //"Noto Sans";
+    return "\"Droid Sans\"";//Times New Roman"; //"Noto Sans";
 }
 
 int container_qt5::get_default_font_size() const
@@ -522,12 +522,18 @@ void container_qt5::draw_text(litehtml::uint_ptr hdc, const litehtml::tchar_t* t
     //ImGui::PushFont((ImFont*)imFont_);
     //ImVec2 size = ImGui::CalcTextSize(text);
 
-    ImFont* font = imFont_;//(ImFont*)hFont;
+    ImFont* font = (ImFont*)hFont;//imFont_;//
+    //ImFont* font = QtImGui::ImGuiRenderer::getFont(QString("\"Cousine Regular\""));
+    //ImFont* font = QtImGui::ImGuiRenderer::getFont(QString("\"Font Awesome\""));
+    ImGui::PushFont(font);
+
+    //qDebug() << "font->GetDebugName " << font->GetDebugName();
+    //qDebug() << "font->FontSize " << font->FontSize;
     ImGuiWindow* win = ImGui::GetCurrentWindow();
     ImVec2 imgui_pos = {win->Pos.x + (float)pos.x, win->Pos.y + pos.y};
     ImColor col(color.red, color.green, color.blue, color.alpha);
     win->DrawList->AddText(font, font->FontSize, imgui_pos, col, text);
-
+ImGui::PopFont();
     //ImGui::PopFont();
 }
 
@@ -571,6 +577,8 @@ void container_qt5::delete_font(litehtml::uint_ptr hFont)
 
 litehtml::uint_ptr container_qt5::create_font(const litehtml::tchar_t* faceName, int size, int weight, litehtml::font_style italic, unsigned int decoration, litehtml::font_metrics* fm)
 {
+    //QString faceName(faceName_);
+
     //TODO: decoration
     qDebug() << __FUNCTION__ << " for " << faceName << size << weight;
     /*QFont *font = new QFont(faceName, size, weight, italic == litehtml::fontStyleItalic);
@@ -588,12 +596,16 @@ litehtml::uint_ptr container_qt5::create_font(const litehtml::tchar_t* faceName,
     ImFont* font = ri->addFont("bin/veramono.ttf", size);*/
 
     ImGuiIO& io = ImGui::GetIO();
-    ImFont* font = QtImGui::ImGuiRenderer::customFont;//io.Fonts->AddFontFromFileTTF("/home/avakimov_am/job/qtimgui/DroidSans.ttf", 16.0f);
-
+    ImFont* font = QtImGui::ImGuiRenderer::getFont(faceName);//QtImGui::ImGuiRenderer::customFont;//io.Fonts->AddFontFromFileTTF("://DroidSans.ttf", 16.0f);
+    if (!font) {
+      qDebug() << "unsupported font " << faceName;
+      font = QtImGui::ImGuiRenderer::getFont("\"Droid Sans\"");
+    }
 
     fm->height = font->Ascent - font->Descent;
     fm->ascent = font->Ascent;
     fm->descent = -font->Descent;
+    fm->x_height = font->FontSize;
     //bool underline = (decoration & litehtml::font_decoration_underline) != 0;
     return (litehtml::uint_ptr)font;
 }

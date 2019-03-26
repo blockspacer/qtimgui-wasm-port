@@ -5,6 +5,8 @@ html {
     width:100%;
   position: relative;
   background: red;
+  font: "Cousine Regular";
+  font-size:59px;
 }
 
 head {

@@ -36,7 +36,7 @@ public:
     /**
      * Destructor
      */
-    ~container_qt5();
+    virtual ~container_qt5();
 
     void set_document(std::shared_ptr<litehtml::document> doc);
 

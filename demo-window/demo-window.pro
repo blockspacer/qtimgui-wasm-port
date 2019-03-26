@@ -2,6 +2,8 @@ QT       += core gui
 TARGET = demo-window
 TEMPLATE = app
 
+CONFIG += c++14
+
 include(../qtimgui.pri)
 
 INCLUDEPATH  += \
@@ -63,3 +65,6 @@ SOURCES += \
     ../litehtml/src/table.cpp \
     ../litehtml/src/utf8_strings.cpp \
     ../litehtml/src/web_color.cpp \
+
+RESOURCES += \
+    res.qrc
