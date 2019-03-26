@@ -168,6 +168,37 @@ void ImGuiRenderer::renderDrawList(ImDrawData *draw_data)
     glScissor(last_scissor_box[0], last_scissor_box[1], (GLsizei)last_scissor_box[2], (GLsizei)last_scissor_box[3]);
 }
 
+ImFont* ImGuiRenderer::customFont = nullptr;
+
+bool ImGuiRenderer::createFontsTexture2()
+{
+    // Build texture atlas
+    ImGuiIO& io = ImGui::GetIO();
+    unsigned char* pixels;
+    int width, height;
+
+    customFont = io.Fonts->AddFontFromFileTTF("/home/avakimov_am/job/qtimgui/DroidSans.ttf", 16.0f);
+
+    io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);   // Load as RGBA 32-bits (75% of the memory is wasted, but default font is so small) because it is more likely to be compatible with user's existing shaders. If your ImTextureId represent a higher-level concept than just a GL texture id, consider calling GetTexDataAsAlpha8() instead to save on GPU memory.
+
+    // Upload texture to graphics system
+    GLint last_texture;
+    glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
+    glGenTextures(1, &g_FontTexture);
+    glBindTexture(GL_TEXTURE_2D, g_FontTexture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+
+    // Store our identifier
+    io.Fonts->TexID = (void *)(intptr_t)g_FontTexture;
+
+    // Restore state
+    glBindTexture(GL_TEXTURE_2D, last_texture);
+
+    return true;
+}
+
 bool ImGuiRenderer::createFontsTexture()
 {
     // Build texture atlas
@@ -292,8 +323,9 @@ bool ImGuiRenderer::createDeviceObjects()
     glVertexAttribPointer(g_AttribLocationColor, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, col));
 #undef OFFSETOF
 
-    createFontsTexture();
 
+    createFontsTexture();
+    createFontsTexture2();
     // Restore modified GL state
     glBindTexture(GL_TEXTURE_2D, last_texture);
     glBindBuffer(GL_ARRAY_BUFFER, last_array_buffer);

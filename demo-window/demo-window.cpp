@@ -45,7 +45,7 @@ protected:
 
           //auto doc = litehtml::document::createFromUTF8("<html><body><ul><li>One</li><li>Zwei</li><li>Trois</li></ul></body></html>", &c, &ctxt);
           //auto doc = litehtml::document::createFromUTF8("<html><body><p>Line1.1 Line1.2<br />Line2</p><ul><li>One</li><li>Zwei</li><li>Trois</li></ul></body></html>", &c, &ctxt);
-          doc = litehtml::document::createFromUTF8("<html><body><div style='background:green;width:30px;height:30px'></div><a href=\"http://linuxfr.org/\"></a></body></html>", cont.get(), &ctxt);
+          doc = litehtml::document::createFromUTF8("<html><body><div style='background:green;width:30px;height:30px'>text1</div><a href=\"http://linuxfr.org/\">text2</a></body></html>", cont.get(), &ctxt);
           //auto doc = litehtml::document::createFromUTF8("<html><body><table><tr><th>H1</th><th>H2</th></tr><tr><td>C1.1</td><td>C1.2</td></tr><tr><td>C2.1</td><td>C2.2</td></tr></table></body></html>", &c, &ctxt);
           cont->set_document(doc);
           todo = true;

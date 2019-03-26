@@ -39,6 +39,10 @@ public:
 
     static ImGuiRenderer *instance();
 
+public:
+  static ImFont* customFont;
+
+  bool createFontsTexture2();
 private:
     ImGuiRenderer() {}
 

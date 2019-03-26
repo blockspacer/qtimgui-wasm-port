@@ -1,5 +1,6 @@
 #include "container_qt5_imgui.h"
 #include "imgui_internal.h"
+#include "ImGuiRenderer.h"
 #include <QDebug>
 #include <QFont>
 #include <QFontMetrics>
@@ -7,7 +8,7 @@
 #include <QMouseEvent>
 #include <QDesktopServices>
 
-
+#ifdef nope
 struct ImGuiFont : public ImFont
 {
     ImGuiFont(const QFontMetrics& metrics)
@@ -51,6 +52,7 @@ io.Fonts->AddCustomRectFontGlyph(this, i, g.AdvanceX, g.AdvanceX, g.AdvanceX);
         return FallbackGlyph;
     }
 };
+#endif
 
 /**
  * Simple conversion functions
@@ -75,17 +77,19 @@ container_qt5::container_qt5(QWidget *parent)
 
 
 ImGuiIO& io = ImGui::GetIO();
-     // ImFont* font = io.Fonts->AddFontDefault();
+ ImFont* font = io.Fonts->AddFontDefault();
+
 //QFont qfont("Segoe UI");
 //QFont qfont("Noto Sans");
-QFont qfont("Times New Roman");
+/*QFont qfont("Droid Sans");
 
     qfont.setPixelSize(20);
     auto fm = QFontMetrics(qfont);
-  //imFont_ = new ImGuiFont(fm);
+  //imFont_ = new ImGuiFont(fm);*/
 
 // TODO >>
-  imFont_ = io.Fonts->AddFontFromFileTTF("/home/avakimov_am/job/qtimgui/DroidSans.ttf", 16.0f);
+
+  imFont_ = QtImGui::ImGuiRenderer::customFont;// io.Fonts->AddFontFromFileTTF("/home/avakimov_am/job/qtimgui/DroidSans.ttf", 16.0f);
 
   //imFont_ = io.Fonts->AddFontFromMemoryTTF();
 //imFont_ = io.FontDefault;
@@ -487,7 +491,7 @@ void container_qt5::draw_list_marker(litehtml::uint_ptr hdc, const litehtml::lis
 const litehtml::tchar_t* container_qt5::get_default_font_name() const
 {
     qDebug() << __FUNCTION__;
-    return "Times New Roman"; //"Noto Sans";
+    return "Droid Sans";//Times New Roman"; //"Noto Sans";
 }
 
 int container_qt5::get_default_font_size() const
@@ -514,11 +518,17 @@ void container_qt5::draw_text(litehtml::uint_ptr hdc, const litehtml::tchar_t* t
     //qDebug() << "Paint " << text << " at " << pos.x << "x" << pos.y;
     painter->drawText(pos.x, pos.bottom() - metrics.descent(), text);*/
 
-    ImFont* font = (ImFont*)hFont;
+
+    //ImGui::PushFont((ImFont*)imFont_);
+    //ImVec2 size = ImGui::CalcTextSize(text);
+
+    ImFont* font = imFont_;//(ImFont*)hFont;
     ImGuiWindow* win = ImGui::GetCurrentWindow();
     ImVec2 imgui_pos = {win->Pos.x + (float)pos.x, win->Pos.y + pos.y};
     ImColor col(color.red, color.green, color.blue, color.alpha);
     win->DrawList->AddText(font, font->FontSize, imgui_pos, col, text);
+
+    //ImGui::PopFont();
 }
 
 int container_qt5::text_width(const litehtml::tchar_t* text, litehtml::uint_ptr hFont)
@@ -540,7 +550,16 @@ int container_qt5::text_width(const litehtml::tchar_t* text, litehtml::uint_ptr 
     ImGui::PopFont();
 
     return size.x;*/
-    return 50;
+
+    if (!hFont) return 50;
+
+    ImGui::PushFont((ImFont*)hFont);
+    ImVec2 size = ImGui::CalcTextSize(text);
+    ImGui::PopFont();
+
+    return size.x;
+
+    //return 50;
 }
 
 void container_qt5::delete_font(litehtml::uint_ptr hFont)
@@ -568,9 +587,13 @@ litehtml::uint_ptr container_qt5::create_font(const litehtml::tchar_t* faceName,
     /*RenderInterface* ri = m_app.getWorldEditor()->getRenderInterface();
     ImFont* font = ri->addFont("bin/veramono.ttf", size);*/
 
-    fm->height = imFont_->Ascent - imFont_->Descent;
-    fm->ascent = imFont_->Ascent;
-    fm->descent = -imFont_->Descent;
+    ImGuiIO& io = ImGui::GetIO();
+    ImFont* font = QtImGui::ImGuiRenderer::customFont;//io.Fonts->AddFontFromFileTTF("/home/avakimov_am/job/qtimgui/DroidSans.ttf", 16.0f);
+
+
+    fm->height = font->Ascent - font->Descent;
+    fm->ascent = font->Ascent;
+    fm->descent = -font->Descent;
     //bool underline = (decoration & litehtml::font_decoration_underline) != 0;
-    return (litehtml::uint_ptr)imFont_;
+    return (litehtml::uint_ptr)font;
 }
