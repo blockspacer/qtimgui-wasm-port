@@ -6,5 +6,8 @@
         <file>master.css</file>
         <file>test.png</file>
         <file>test2.png</file>
+        <file>test1.css</file>
+        <file>ARIALUNI.ttf</file>
+        <file>arialuni.ttf</file>
     </qresource>
 </RCC>

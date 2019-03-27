@@ -13,6 +13,13 @@
 #include <QDesktopServices>
 #include <QDataStream>
 
+// TODO: see litehtml_from_utf8
+#if defined(LITEHTML_UTF8)
+#define _T(x) x
+#else
+#define _T(x) L ##x
+#endif
+
 /*static qint64 hash(const QString & str)
 {
   QByteArray hash = QCryptographicHash::hash(
@@ -93,9 +100,9 @@ container_qt5::container_qt5(QWidget *parent)
 {
     //setMouseTracking(true);
 
-
+/*
 ImGuiIO& io = ImGui::GetIO();
- ImFont* font = io.Fonts->AddFontDefault();
+ ImFont* font = io.Fonts->AddFontDefault();*/
 
 //QFont qfont("Segoe UI");
 //QFont qfont("Noto Sans");
@@ -139,30 +146,88 @@ void container_qt5::render()
     //qDebug() << __FUNCTION__ << "render";
 }
 
-void container_qt5::mouseMoveEvent(QMouseEvent *event)
+void container_qt5::onMouseMove(QMouseEvent *event)
 {
+    lastCursorX = event->x();
+    lastCursorY = event->y();
+    lastCursorClientX = event->x();
+    lastCursorClientY = event->y();
+
     litehtml::position::vector vec;
     if (_doc->on_mouse_over(event->x(), event->y(), event->x(), event->y(), vec))
         render();
 }
 
-void container_qt5::mousePressEvent(QMouseEvent *event)
+void container_qt5::onMouseLeave(QMouseEvent *event)
 {
+    lastCursorX = event->x();
+    lastCursorY = event->y();
+    lastCursorClientX = event->x();
+    lastCursorClientY = event->y();
+
+   std::vector<litehtml::position> redraw_boxes;
+    if (_doc->on_mouse_leave(redraw_boxes))
+        render();
+}
+
+void container_qt5::onMousePress(QMouseEvent *event)
+{
+    lastCursorX = event->x();
+    lastCursorY = event->y();
+    lastCursorClientX = event->x();
+    lastCursorClientY = event->y();
+
     litehtml::position::vector vec;
     if (_doc->on_lbutton_down(event->x(), event->y(), event->x(), event->y(), vec))
         render();
 }
 
-void container_qt5::mouseReleaseEvent(QMouseEvent *event)
+void container_qt5::onMouseRelease(QMouseEvent *event)
 {
+    lastCursorX = event->x();
+    lastCursorY = event->y();
+    lastCursorClientX = event->x();
+    lastCursorClientY = event->y();
+
     litehtml::position::vector vec;
     if (_doc->on_lbutton_up(event->x(), event->y(), event->x(), event->y(), vec))
         render();
 }
 
+bool container_qt5::OnMediaChanged()
+{
+    return _doc->media_changed();
+}
+
+int container_qt5::GetWidth()
+{
+    return _doc->width();
+}
+
+int container_qt5::GetHeight()
+{
+    return _doc->height();
+}
+
+// https://github.com/PingmanTools/LiteHtmlSharp/blob/3f4db0ff0ab4b5cd7f5e10aa1b6ed94f2eee0bcb/LiteHtmlLib/src/DocContainer.cpp#L159
+/*ElementInfo* DocContainer::GetElementInfo(int ID)
+{
+  litehtml::tstring strToReturn;
+
+  for (auto attr : this->m_attrs)
+  {
+    strToReturn.append(attr.first);
+    strToReturn.append(_T("="));
+    strToReturn.append(attr.second);
+    strToReturn.append(_T("\n"));
+  }
+}*/
+
 void container_qt5::get_language(litehtml::tstring& language, litehtml::tstring& culture) const
 {
     qDebug() << "get_language";
+    language = _t("en");
+    culture = _t("");
 }
 
 void container_qt5::get_media_features(litehtml::media_features& media) const
@@ -190,10 +255,47 @@ void container_qt5::get_media_features(litehtml::media_features& media) const
     qDebug() << "=> " << media.width << "x" << media.height;
 }
 
+static bool shouldCreateElement(const litehtml::tchar_t* tag_name, const litehtml::string_map& attributes, const std::shared_ptr< litehtml::document >& doc) {
+  return true;
+}
+
+static int totalElements = 0;
+
 std::shared_ptr< litehtml::element > container_qt5::create_element(const litehtml::tchar_t* tag_name, const litehtml::string_map& attributes, const std::shared_ptr< litehtml::document >& doc)
 {
-    qDebug() << __FUNCTION__ << " this one can be 0";
-    return 0;
+    //qDebug() << __FUNCTION__ << " this one can be 0";
+
+  if(!shouldCreateElement(tag_name, attributes, doc)) {
+    return std::shared_ptr<litehtml::element>();
+  }
+
+  litehtml::tstring attributeStr;
+  for (auto attr : attributes)
+  {
+    attributeStr.append(attr.first);
+    attributeStr.append(_T("="));
+    attributeStr.append(attr.second);
+    attributeStr.append(_T("\n"));
+  }
+  std::string _attributes = std::string(attributeStr.begin(), attributeStr.end());
+
+  //ElementInfo elementInfo = {};
+  int elementID = totalElements++;
+  if (elementID > 0)
+  {
+    // TODO
+
+    //std::shared_ptr<TagElement> result = std::make_shared(doc);
+    //result->SetManagedInfo(elementInfo);
+    //_elements[elementID] = result;
+    //return std::shared_ptr<litehtml::element>(result.get());
+    //return std::make_shared<litehtml::element>(doc);
+    return std::shared_ptr<litehtml::element>();
+  }
+  else
+  {
+    return std::shared_ptr<litehtml::element>();
+  }
 }
 
 void container_qt5::get_client_rect(litehtml::position& client) const
@@ -227,14 +329,78 @@ void container_qt5::set_clip(const litehtml::position& pos, const litehtml::bord
 
 void container_qt5::import_css(litehtml::tstring& text, const litehtml::tstring& url, litehtml::tstring& baseurl)
 {
-    qDebug() << "import_css";
     /*download(m_host, url.c_str(), &data);
     text = (const char*)&data[0];*/
+
+    QFile qFile(url.c_str());
+
+        if(!qFile.exists())
+        {
+          qDebug() << "nonexistent file " << qFile.fileName();
+          return;
+        }
+
+        if(!qFile.open(QIODevice::ReadOnly))
+        {
+            qDebug() << "Can`t read data from " << qFile.fileName();
+           return;
+        }
+
+        //QByteArray fileData = qFile.readAll();
+        m_loaded_css[QString(url.c_str())] = qFile.readAll();
+        QByteArray& fileData = m_loaded_css[QString(url.c_str())];
+
+        if(!fileData.size())
+        {
+            qDebug() << "Empty data from " << qFile.fileName();
+          return;
+        }
+
+        qFile.close();
+
+        text = (const char*)&fileData.data()[0];
+
+        qDebug() << "imported css" << url.c_str();
+        //qDebug() << "imported css data" << fileData.data();
+
+        // TODO: free resources?
 }
 
 void container_qt5::transform_text(litehtml::tstring& text, litehtml::text_transform tt)
 {
-    qDebug() << "transform_text";
+  qDebug() << "transform_text";
+
+// TODO: UTF8 https://github.com/pinaraf/litehtml-qt/blob/f3f4959f1d4a4884a0a18d87db7483e886cc3ee3/containers/cairo/cairo_container.cpp#L942
+
+/*
+ * The text-transform property in CSS controls text case and capitalization.
+    lowercase makes all of the letters in the selected text lowercase.
+    uppercase makes all of the letters in the selected text uppercase.
+    capitalize capitalizes the first letter of each word in the selected text.
+    none leaves the text's case and capitalization exactly as it was entered.
+    inherit gives the text the case and capitalization of its parent.
+ */
+
+  std::string temp = text;
+
+  // capitalizes the first letter of each word
+  if (tt == litehtml::text_transform_capitalize) {
+    // Convert lowercase letter to uppercase
+    // see http://www.cplusplus.com/reference/cctype/toupper/
+    temp[0] = toupper(temp[0]); // TODO: do to each word
+
+  } else if (tt == litehtml::text_transform_uppercase) {
+    // std::transform applies the given function to a range and stores the result in another range
+    // see https://en.cppreference.com/w/cpp/algorithm/transform
+    std::transform(temp.begin(), temp.end(), temp.begin(), ::toupper);
+
+  } else if (tt == litehtml::text_transform_lowercase) {
+    // std::transform applies the given function to a range and stores the result in another range
+    // see https://en.cppreference.com/w/cpp/algorithm/transform
+    std::transform(temp.begin(), temp.end(), temp.begin(), ::tolower);
+  }
+
+  text = temp.c_str();
 }
 
 void container_qt5::set_cursor(const litehtml::tchar_t* cursor_)
@@ -330,62 +496,84 @@ void container_qt5::draw_borders(litehtml::uint_ptr hdc, const litehtml::borders
     //ImVec2 imgui_pos = { win->Pos.x + (float)draw_pos.x, win->Pos.y + (float)draw_pos.y };
     //win->DrawList->AddRect(imgui_pos, )
 
-    auto drawBorder = [](const litehtml::border& border) {
-    };
+    /*auto drawBorder = [](const litehtml::border& border) {
+    };*/
 
-    if (borders.bottom.width != 0 && borders.bottom.style > litehtml::border_style_hidden)
+    int bdr_top		= 0;
+    int bdr_bottom	= 0;
+    int bdr_left	= 0;
+    int bdr_right	= 0;
+
+    if(borders.top.width != 0 && borders.top.style > litehtml::border_style_hidden)
     {
-      ImVec2 a(win->Pos.x + draw_pos.left(), win->Pos.y + draw_pos.bottom());
-      ImVec2 b(win->Pos.x + draw_pos.right(), win->Pos.y + draw_pos.bottom());
-      ImColor col(borders.bottom.color.red, borders.bottom.color.green, borders.bottom.color.blue, borders.bottom.color.alpha);
+      bdr_top = (int) borders.top.width;
+    }
+    if(borders.bottom.width != 0 && borders.bottom.style > litehtml::border_style_hidden)
+    {
+      bdr_bottom = (int) borders.bottom.width;
+    }
+    if(borders.left.width != 0 && borders.left.style > litehtml::border_style_hidden)
+    {
+      bdr_left = (int) borders.left.width;
+    }
+    if(borders.right.width != 0 && borders.right.style > litehtml::border_style_hidden)
+    {
+      bdr_right = (int) borders.right.width;
+    }
 
-      for (int x = 0; x < borders.bottom.width; x++)
+    if (bdr_bottom)
+    {
+      ImVec2 aFrom(win->Pos.x + draw_pos.left(), win->Pos.y + draw_pos.bottom());
+      ImVec2 bTo(win->Pos.x + draw_pos.right(), win->Pos.y + draw_pos.bottom());
+      ImColor color(borders.bottom.color.red, borders.bottom.color.green, borders.bottom.color.blue, borders.bottom.color.alpha);
+
+      for (int x = 0; x < bdr_bottom; x++)
       {
-        win->DrawList->AddLine(a, b, col);
-        ++a.y;
-        ++b.y;
+        win->DrawList->AddLine(aFrom, bTo, color);
+        ++aFrom.y;
+        ++bTo.y;
       }
     }
 
-    if (borders.top.width != 0 && borders.top.style > litehtml::border_style_hidden)
+    if (bdr_top)
     {
-      ImVec2 a(win->Pos.x + draw_pos.left(), win->Pos.y + draw_pos.top());
-      ImVec2 b(win->Pos.x + draw_pos.right(), win->Pos.y + draw_pos.top());
-      ImColor col(borders.top.color.red, borders.top.color.green, borders.top.color.blue, borders.top.color.alpha);
+      ImVec2 aFrom(win->Pos.x + draw_pos.left(), win->Pos.y + draw_pos.top());
+      ImVec2 bTo(win->Pos.x + draw_pos.right(), win->Pos.y + draw_pos.top());
+      ImColor color(borders.top.color.red, borders.top.color.green, borders.top.color.blue, borders.top.color.alpha);
 
-      for (int x = 0; x < borders.top.width; x++)
+      for (int x = 0; x < bdr_top; x++)
       {
-        win->DrawList->AddLine(a, b, col);
-        ++a.y;
-        ++b.y;
+        win->DrawList->AddLine(aFrom, bTo, color);
+        ++aFrom.y;
+        ++bTo.y;
       }
     }
 
-    if (borders.right.width != 0 && borders.right.style > litehtml::border_style_hidden)
+    if (bdr_right)
     {
-      ImVec2 a(win->Pos.x + draw_pos.right(), win->Pos.y + draw_pos.top());
-      ImVec2 b(win->Pos.x + draw_pos.right(), win->Pos.y + draw_pos.bottom());
-      ImColor col(borders.right.color.red, borders.right.color.green, borders.right.color.blue, borders.right.color.alpha);
+      ImVec2 aFrom(win->Pos.x + draw_pos.right(), win->Pos.y + draw_pos.top());
+      ImVec2 bTo(win->Pos.x + draw_pos.right(), win->Pos.y + draw_pos.bottom());
+      ImColor color(borders.right.color.red, borders.right.color.green, borders.right.color.blue, borders.right.color.alpha);
 
-      for (int x = 0; x < borders.right.width; x++)
+      for (int x = 0; x < bdr_right; x++)
       {
-        win->DrawList->AddLine(a, b, col);
-        --a.x;
-        --b.x;
+        win->DrawList->AddLine(aFrom, bTo, color);
+        --aFrom.x;
+        --bTo.x;
       }
     }
 
-    if (borders.left.width != 0 && borders.left.style > litehtml::border_style_hidden)
+    if (bdr_left)
     {
-      ImVec2 a(win->Pos.x + draw_pos.left(), win->Pos.y + draw_pos.top());
-      ImVec2 b(win->Pos.x + draw_pos.left(), win->Pos.y + draw_pos.bottom());
-      ImColor col(borders.left.color.red, borders.left.color.green, borders.left.color.blue, borders.left.color.alpha);
+      ImVec2 aFrom(win->Pos.x + draw_pos.left(), win->Pos.y + draw_pos.top());
+      ImVec2 bTo(win->Pos.x + draw_pos.left(), win->Pos.y + draw_pos.bottom());
+      ImColor color(borders.left.color.red, borders.left.color.green, borders.left.color.blue, borders.left.color.alpha);
 
-      for (int x = 0; x < borders.left.width; x++)
+      for (int x = 0; x < bdr_left; x++)
       {
-        win->DrawList->AddLine(a, b, col);
-        ++a.x;
-        ++b.x;
+        win->DrawList->AddLine(aFrom, bTo, color);
+        ++aFrom.x;
+        ++bTo.x;
       }
     }
 }
@@ -396,12 +584,37 @@ void container_qt5::draw_background(litehtml::uint_ptr hdc, const litehtml::back
     // draw_background draw_background https://images2017.cnblogs.com/blog/847289/201712/847289-20171207174342691-530707282.png
 
     ImGuiWindow* win = ImGui::GetCurrentWindow();
-    ImVec2 a(win->Pos.x + bg.clip_box.left(), win->Pos.y + bg.clip_box.top());
-    ImVec2 b(win->Pos.x + bg.clip_box.right(), win->Pos.y + bg.clip_box.bottom());
+
+    // clip_box. Defines the position of the clipping box. See the background-clip CSS property.
+    ImVec2 clip_a(win->Pos.x + bg.clip_box.left(), win->Pos.y + bg.clip_box.top());
+    ImVec2 clip_b(win->Pos.x + bg.clip_box.right(), win->Pos.y + bg.clip_box.bottom());
+
+    // The image contains the background image URL. URL can be relative.
+    // Use the baseurl member to find the base URL for image.
     if (bg.image.empty())
     {
-      ImColor col(bg.color.red, bg.color.green, bg.color.blue, bg.color.alpha);
-      win->DrawList->AddRectFilled(a, b, col);
+      // This member defines the background-color CSS property.
+      ImColor color(bg.color.red, bg.color.green, bg.color.blue, bg.color.alpha);
+      win->DrawList->AddRectFilled(clip_a, clip_b, color);
+      return;
+    }
+
+
+    // Defines the position of the origin box. See the background-origin CSS property.
+    // The background-origin property specifies the origin position (the background positioning area) of a background image.
+    // bg.origin_box
+    // TODO https://github.com/PingmanTools/LiteHtmlSharp/blob/3f4db0ff0ab4b5cd7f5e10aa1b6ed94f2eee0bcb/LiteHtmlLib/src/DocContainer.cpp#L67
+
+
+    /*
+      This is the background-attachment CSS property. Can be one of the following values:
+
+      background_attachment_scroll - CSS scroll
+      background_attachment_fixed - - CSS fixed
+    */
+    if (bg.attachment == litehtml::background_attachment::background_attachment_fixed)
+    {
+      // TODO
       return;
     }
 
@@ -411,43 +624,84 @@ void container_qt5::draw_background(litehtml::uint_ptr hdc, const litehtml::back
     auto iter = m_images.find(bg.image.c_str());
     if (iter == m_images.end()) {
       qDebug() << "iter == m_images.end()" << __FUNCTION__;
+      // drw placeholder
+      ImColor dummyColor(100, 100, 100, 100);
+      win->DrawList->AddRectFilled(clip_a, clip_b, dummyColor);
       return;
     }
 
     auto img = iter.value();
 
+    /*
+     * This the background-repeat CSS property. Can be one of the following values:
+
+        background_repeat_repeat - CSS repeat
+        background_repeat_repeat_x - CSS repeat-x
+        background_repeat_repeat_y - CSS repeat-y
+        background_repeat_no_repeat - CSS no-repeat
+     */
     switch (bg.repeat)
     {
-      case litehtml::background_repeat_no_repeat: win->DrawList->AddImage(img.textureId, a, b); break;
+      case litehtml::background_repeat_no_repeat:
+      {
+        win->DrawList->AddImage(img.textureId, clip_a, clip_b);
+        break;
+      }
       case litehtml::background_repeat_repeat_x:
       {
-        ImVec2 uv((b.x - a.x) / img.w, 0);
+        ImVec2 uv((clip_b.x - clip_a.x) / img.w, 0);
         //glBindTexture(GL_TEXTURE_2D, my_opengl_texture);
         //ImGui::GetWindowDrawList()->PushTextureID(img.textureId);
-        win->DrawList->AddImage(img.textureId, a, b, ImVec2(0, 0), uv);
+        win->DrawList->AddImage(img.textureId, clip_a, clip_b, ImVec2(0, 0), uv);
         //ImGui::GetWindowDrawList()->PopTextureID();
         break;
       }
       break;
       case litehtml::background_repeat_repeat_y:
       {
-        ImVec2 uv(0, (b.y - a.y) / img.h);
+        ImVec2 uv(0, (clip_b.y - clip_a.y) / img.h);
         //glBindTexture(GL_TEXTURE_2D, my_opengl_texture);
         //ImGui::GetWindowDrawList()->PushTextureID(img.textureId);
-        win->DrawList->AddImage(img.textureId, a, b, ImVec2(0, 0), uv);
+        win->DrawList->AddImage(img.textureId, clip_a, clip_b, ImVec2(0, 0), uv);
         //ImGui::GetWindowDrawList()->PopTextureID();
         break;
       }
       case litehtml::background_repeat_repeat:
       {
-        ImVec2 uv((b.x - a.x) / img.w, (b.y - a.y) / img.h);
+        ImVec2 uv((clip_b.x - clip_a.x) / img.w, (clip_b.y - clip_a.y) / img.h);
         //glBindTexture(GL_TEXTURE_2D, my_opengl_texture);
         //ImGui::GetWindowDrawList()->PushTextureID(img.textureId);
-        win->DrawList->AddImage(img.textureId, a, b, ImVec2(0, 0), uv);
+        win->DrawList->AddImage(img.textureId, clip_a, clip_b, ImVec2(0, 0), uv);
         //ImGui::GetWindowDrawList()->PopTextureID();
         break;
       }
     }
+}
+
+static uintptr_t CreateFontAtlas(int width, int height, uint8_t * data)
+{
+  GLuint handle = 0;
+  glGenTextures(1, &handle);
+  glBindTexture(GL_TEXTURE_2D, handle);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_R8,width, height, 0, GL_RED, GL_UNSIGNED_BYTE, data);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  return uintptr_t(handle);
+}
+
+// TODO: DeleteTexture? glDeleteTextures(1, reinterpret_cast<GLuint*>(&handle));
+// https://github.com/feliwir/webgui/blob/18b92372bb29933a5d9500e42aebf8bf1db5a675/sample/renderer.cpp#L38
+
+static uintptr_t CreateTexture(int width, int height, uint8_t * pixels)
+{
+  GLuint my_opengl_texture = 0;
+  glGenTextures(1, &my_opengl_texture);
+  glBindTexture(GL_TEXTURE_2D, my_opengl_texture);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+  //glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, width, height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, pixels);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+  return uintptr_t(my_opengl_texture);
 }
 
 void container_qt5::get_image_size(const litehtml::tchar_t* src, const litehtml::tchar_t* baseurl, litehtml::size& sz)
@@ -525,13 +779,16 @@ void container_qt5::load_image(const litehtml::tchar_t* src, const litehtml::tch
 
     //glGetIntegerv(GL_TEXTURE_BINDING_2D, &my_opengl_texture);
 
-    glGenTextures(1, &my_opengl_texture);
+    /*glGenTextures(1, &my_opengl_texture);
     img.textureId = (ImTextureID)my_opengl_texture;
     glBindTexture(GL_TEXTURE_2D, my_opengl_texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.w, img.h, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.w, img.h, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);*/
+
+    auto texId = CreateTexture(img.w, img.h, pixels);
+    img.textureId = (ImTextureID)texId;
 
         // Now that we have an OpenGL texture, assuming our imgui rendering function (imgui_impl_xxx.cpp file) takes GLuint as ImTextureID, we can display it:
         //ImGui::Image((void*)(intptr_t)my_opengl_texture, ImVec2(img.w, img.h));
@@ -544,7 +801,17 @@ void container_qt5::load_image(const litehtml::tchar_t* src, const litehtml::tch
 
 void container_qt5::draw_list_marker(litehtml::uint_ptr hdc, const litehtml::list_marker& marker)
 {
-    qDebug() << __FUNCTION__;
+    ImGuiWindow* win = ImGui::GetCurrentWindow();
+
+    int top_margin = marker.pos.height / 3;
+
+    //qDebug() << "marker.baseurl" << marker.pos.right();
+
+    int draw_x		= win->Pos.x + marker.pos.x;// + abs(marker.pos.right());
+    int draw_y		= win->Pos.y + marker.pos.y + top_margin;
+    int draw_width	= marker.pos.height - top_margin * 2;
+    int draw_height = marker.pos.height - top_margin * 2;
+
     /*qDebug() << marker.marker_type << marker.pos.x << "x" << marker.pos.y << marker.pos.left() << marker.pos.right();
     qDebug() << marker.baseurl << QString::fromStdString(marker.image);
     QPainter *painter = (QPainter *) hdc;
@@ -561,7 +828,7 @@ void container_qt5::draw_list_marker(litehtml::uint_ptr hdc, const litehtml::lis
         default: break;
     }
     painter->restore();*/
-}
+
 /*
     list_style_type_none,
     list_style_type_circle,
@@ -586,21 +853,62 @@ void container_qt5::draw_list_marker(litehtml::uint_ptr hdc, const litehtml::lis
     list_style_type_upper_roman,
 */
 
+    // clip_box. Defines the position of the clipping box. See the background-clip CSS property.
+    ImVec2 clip_a(draw_x, draw_y);
+    ImVec2 clip_b(draw_x + draw_width, draw_y + draw_height);
+
+    switch(marker.marker_type)
+      {
+            case litehtml::list_style_type_circle:
+            case litehtml::list_style_type_disc:
+            case litehtml::list_style_type_square:
+            default:
+        {
+          // fill_rect(hdc, litehtml::position(draw_x, draw_y, draw_width, draw_height), color, litehtml::css_border_radius());
+          ImColor color(marker.color.red, marker.color.green, marker.color.blue, marker.color.alpha);
+          win->DrawList->AddRectFilled(clip_a, clip_b, color);
+
+          // TODO: marker.image
+
+          // TODO: depends on font size. fix fonts, add different sizes!
+
+          //win->DrawList->AddRectFilled(ImVec2(draw_x,draw_y), ImVec2(draw_x+draw_width+15,draw_y+draw_height), color);
+          //qDebug() << __FUNCTION__ << draw_x+draw_width;
+        }
+        break;
+    }
+}
+
 const litehtml::tchar_t* container_qt5::get_default_font_name() const
 {
     qDebug() << __FUNCTION__;
-    return "\"Droid Sans\"";//Times New Roman"; //"Noto Sans";
+    return _t("\"Droid Sans\""); //Times New Roman"; //"Noto Sans";
 }
 
 int container_qt5::get_default_font_size() const
 {
-    qDebug() << __FUNCTION__;
-    return 16;
+    //qDebug() << __FUNCTION__;
+    return 12;
 }
+
+// https://github.com/Nanquitas/3DS_eBook_Reader/blob/51f1fedc2565de36253104a01f4689db00c35991/source/Litehtml3DSContainer.cpp#L18
+#define PPI 132.1
 
 int container_qt5::pt_to_px(int pt)
 {
     qDebug() << __FUNCTION__;
+
+    /*
+  int ret = pt;
+  #if _WIN32
+  HDC dc = GetDC(NULL);
+  ret = MulDiv(pt, GetDeviceCaps(dc, LOGPIXELSY), 72);
+  ReleaseDC(NULL, dc);
+  #endif
+  return ret;
+     */
+
+    return pt / 72 * PPI;
 }
 
 void container_qt5::draw_text(litehtml::uint_ptr hdc, const litehtml::tchar_t* text, litehtml::uint_ptr hFont, litehtml::web_color color, const litehtml::position& pos)
@@ -628,7 +936,7 @@ void container_qt5::draw_text(litehtml::uint_ptr hdc, const litehtml::tchar_t* t
     ImFont* font = (ImFont*)hFont;//imFont_;//
     //ImFont* font = QtImGui::ImGuiRenderer::getFont(QString("\"Cousine Regular\""));
     //ImFont* font = QtImGui::ImGuiRenderer::getFont(QString("\"Font Awesome\""));
-    ImGui::PushFont(font);
+    //ImGui::PushFont(font);
 
     //qDebug() << "font->GetDebugName " << font->GetDebugName();
     //qDebug() << "font->FontSize " << font->FontSize;
@@ -636,13 +944,14 @@ void container_qt5::draw_text(litehtml::uint_ptr hdc, const litehtml::tchar_t* t
     ImVec2 imgui_pos = {win->Pos.x + (float)pos.x, win->Pos.y + pos.y};
     ImColor col(color.red, color.green, color.blue, color.alpha);
     win->DrawList->AddText(font, font->FontSize, imgui_pos, col, text);
-ImGui::PopFont();
+    //ImGui::PopFont();
+
     //ImGui::PopFont();
 }
 
 int container_qt5::text_width(const litehtml::tchar_t* text, litehtml::uint_ptr hFont)
 {
-    qDebug() << __FUNCTION__;
+    //qDebug() << __FUNCTION__;
     /*QFont *font = (QFont *) hFont;
     QFontMetrics metrics(*font);
     QString txt(text);
@@ -660,7 +969,10 @@ int container_qt5::text_width(const litehtml::tchar_t* text, litehtml::uint_ptr 
 
     return size.x;*/
 
-    if (!hFont) return 50;
+    if (!hFont) {
+      qDebug() << __FUNCTION__ << " can`t get text width for empty font";
+      return 50;
+    }
 
     ImGui::PushFont((ImFont*)hFont);
     ImVec2 size = ImGui::CalcTextSize(text);
@@ -674,10 +986,15 @@ int container_qt5::text_width(const litehtml::tchar_t* text, litehtml::uint_ptr 
 void container_qt5::delete_font(litehtml::uint_ptr hFont)
 {
     qDebug() << "delete_font";
+
+    // TODO
+
     /*QFont *font = (QFont *) hFont;
     delete(font);*/
 }
 
+
+// TODO: utf8 && dynamic font load && dynamic font size
 litehtml::uint_ptr container_qt5::create_font(const litehtml::tchar_t* faceName, int size, int weight, litehtml::font_style italic, unsigned int decoration, litehtml::font_metrics* fm)
 {
     //QString faceName(faceName_);
@@ -710,5 +1027,6 @@ litehtml::uint_ptr container_qt5::create_font(const litehtml::tchar_t* faceName,
     fm->descent = -font->Descent;
     fm->x_height = font->FontSize;
     //bool underline = (decoration & litehtml::font_decoration_underline) != 0;
+
     return (litehtml::uint_ptr)font;
 }

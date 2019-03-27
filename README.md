@@ -36,3 +36,39 @@ protected:
 ```
 
 See [QOpenGLWidget example](demo-widget/demo-widget.cpp) and [QOpenGLWindow example](/demo-window/demo-window.cpp) for details.
+
+
+## TODO
+
+Lottie and opengl
+https://www.bogotobogo.com/Qt/Qt5_OpenGL_QGLWidget.php
+https://github.com/grimace87/RandomToadJunk/blob/91219bd278db4cd77ab9c1578df3ab7cad542a27/app/src/main/java/grimace/toad/MainActivity.java
+http://www.trentreed.net/blog/qt5-opengl-part-1-basic-rendering/
+https://github.com/7thFACTOR/horus_ui
+
+Dsable some features for web build https://blog.basyskom.com/2017/qt-lite/
+
+Opengl UI
+https://github.com/litehtml/litehtml
+https://github.com/lc-soft/LCUI
+LibRocket
+https://github.com/Flix01/imgui/wiki/ImGui-Addons-Branch-Home
+litehtml + SVG https://github.com/bigfatbrowncat/nanohtml/blob/master/src/Window.cpp#L108 https://github.com/memononen/nanosvg
+litehtml + imgui https://github.com/nem0/lumixengine_html/blob/master/src/editor/plugins.cpp
+
+flexbox
+
+utf8 fonts
+
+shadow dom manipulations
+
+dynamic fonts
+
+https://stackoverflow.com/a/33558820
+    HTML, CSS, SVG, aPNG (animated PNGs), image sprites,
+    <plaintext> - editor with syntax highlighting,
+    <htmlarea> - WYSIWYG HTML editor,
+    <frame type=pager> - print preview and HTML/CSS print,
+    animations,
+    HTTP client, REST/JSON client, WebSocket's, DataSockets,
+    etc.

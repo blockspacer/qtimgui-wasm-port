@@ -1,4 +1,5 @@
 #include "ImGuiRenderer.h"
+#include "IconsFontAwesome5.h"
 
 #include <QDateTime>
 #include <QGuiApplication>
@@ -206,6 +207,12 @@ bool ImGuiRenderer::createFontsTexture()
     return true;
 }
 
+static int totalFonts = 1;
+
+// TODO: need to prolog font QByteArray lifetime
+// NOTE: Owned TTF buffer will be deleted after ImGui`s Build().
+static QHash<QString, QByteArray> fontDatas;
+
 bool ImGuiRenderer::createDeviceObjects()
 {
     // Backup GL state
@@ -304,16 +311,94 @@ bool ImGuiRenderer::createDeviceObjects()
     glVertexAttribPointer(g_AttribLocationColor, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, col));
 #undef OFFSETOF
 
-    //  The code in imgui.cpp embeds a copy of 'ProggyClean.ttf' that you can use without any external files.
-    // https://skia.googlesource.com/external/github.com/ocornut/imgui/+/v1.50/extra_fonts/README.txt
-    createFontsTexture(); // default font
 
     ImGuiIO& io = ImGui::GetIO();
+    ImFont* font = io.Fonts->AddFontDefault();
+    //  The code in imgui.cpp embeds a copy of 'ProggyClean.ttf' that you can use without any external files.
+    // https://skia.googlesource.com/external/github.com/ocornut/imgui/+/v1.50/extra_fonts/README.txt
+    createFontsTexture(); // default font ProggyClean
 
-    //fontname2path[QString("\"Droid Sans\"")] = "://DroidSans.ttf";
-    //fontname2path["\"Font Awesome\""] = "://fa-regular-400.ttf";
+    fontname2path[QString("\"Droid Sans\"")] = "://DroidSans.ttf";
+    fontname2path["\"Font Awesome\""] = "://fa-regular-400.ttf";
     fontname2path[QString("\"Cousine Regular\"")] = "://Cousine-Regular.ttf";
+    fontname2path[QString("\"Arial Uni\"")] = "://arialuni.ttf";
 
+    {
+      // see https://github.com/juliettef/IconFontCppHeaders/blob/master/README.md
+
+      ImFontConfig config;
+      //config.SizePixels = 18.0f;
+      //config.OversampleH = config.OversampleV = 1;
+      config.PixelSnapH = true;
+      config.MergeMode = false;
+      //config.FontNo = totalFonts++;
+      strcpy(config.Name, "\"Droid Sans\"");
+
+
+        QFile qfile(fontname2path[QString("\"Droid Sans\"")]);
+        if(!qfile.exists())
+        {
+          qDebug() << "nonexistent file " << qfile.fileName();
+          // TODO: returns
+        }
+        if(!qfile.open(QIODevice::ReadOnly))
+        {
+            qDebug() << "Can`t read data from " << qfile.fileName();
+        }
+         fontDatas["\"Droid Sans\""] = qfile.readAll();
+         QByteArray& data = fontDatas["\"Droid Sans\""];
+        if(!data.size())
+        {
+            qDebug() << "Empty data from " << qfile.fileName();
+        }
+      fontname2font["\"Droid Sans\""] = io.Fonts->AddFontFromMemoryTTF((void*)data.data(), data.size(), 16.0f, &config, io.Fonts->GetGlyphRangesCyrillic());
+
+
+      ///fontname2font["\"Droid Sans\""] = io.Fonts->AddFontFromFileTTF("/home/avakimov_am/job/qtimgui/demo-window/DroidSans.ttf", 16.0f, &config, io.Fonts->GetGlyphRangesCyrillic());
+      //io.FontDefault = fontname2font["\"Droid Sans\""];
+      createFontsTexture();
+    }
+
+    {
+      // see https://github.com/juliettef/IconFontCppHeaders/blob/master/README.md
+
+      ImFontConfig config;
+      //config.SizePixels = 18.0f;
+      //config.OversampleH = config.OversampleV = 1;
+      config.PixelSnapH = true;
+      config.MergeMode = false;
+      //config.FontNo = totalFonts++;
+      strcpy(config.Name, "\"Font Awesome\"");
+      const ImWchar icon_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+
+        QFile qfile(fontname2path[QString("\"Font Awesome\"")]);
+        if(!qfile.exists())
+        {
+          qDebug() << "nonexistent file " << qfile.fileName();
+          // TODO: returns
+        }
+        if(!qfile.open(QIODevice::ReadOnly))
+        {
+            qDebug() << "Can`t read data from " << qfile.fileName();
+        }
+         fontDatas["\"Font Awesome\""] = qfile.readAll();
+         QByteArray& data = fontDatas["\"Font Awesome\""];
+        if(!data.size())
+        {
+            qDebug() << "Empty data from " << qfile.fileName();
+        }
+      fontname2font["\"Font Awesome\""] = io.Fonts->AddFontFromMemoryTTF((void*)data.data(), data.size(), 16.0f, &config, icon_ranges);
+
+      //fontname2font["\"Font Awesome\""] = io.Fonts->AddFontFromFileTTF("/home/avakimov_am/job/qtimgui/demo-window/fa-regular-400.ttf", 16.0f, &config, icon_ranges);
+      //io.FontDefault = fontname2font["\"Font Awesome\""];
+      createFontsTexture();
+    }
+
+    /*qDebug() << fontname2path[QString("\"Droid Sans\"")];
+    qDebug() << fontname2path[QString("\"Cousine Regular\"")];
+    qDebug() << fontname2path[QString("\"Arial Uni\"")];*/
+
+#ifdef nope
     for(auto e : fontname2path/*.toStdMap()*/)
     {
         //qDebug() << e.first << "," << e.second << '\n';
@@ -332,6 +417,8 @@ bool ImGuiRenderer::createDeviceObjects()
            continue;
         }
 
+        // TODO: prolog QByteArray lifetime
+        // BUG >>>>
         QByteArray data = qfile.readAll();
 
         if(!data.size())
@@ -340,22 +427,39 @@ bool ImGuiRenderer::createDeviceObjects()
            continue;
         }
 
-        qfile.close();
-
     ImFontConfig font_cfg = ImFontConfig();
-    font_cfg.OversampleH = font_cfg.OversampleV = 1;
-    font_cfg.PixelSnapH = true;
-    //font_cfg.MergeMode = true;
-    strcpy(font_cfg.Name, e.first.toLocal8Bit());
+    //font_cfg.OversampleH = font_cfg.OversampleV = 1;
+    //font_cfg.PixelSnapH = true;
+    font_cfg.MergeMode = false;
+    //font_cfg.FontNo = totalFonts++;
+    //font_cfg.FontData = (void*)data.data();
+    //font_cfg.FontDataSize = data.size();
+    //strcpy(font_cfg.Name, e.first.toLocal8Bit());
     //if (font_cfg.Name[0] == '\0') strcpy(font_cfg.Name, e.first.c_str());//e.first.toLocal8Bit());
     //if (font_cfg.SizePixels <= 0.0f) font_cfg.SizePixels = 13.0f;
-    font_cfg.SizePixels = 14.0f;
-
 
         //customFont = io.Fonts->AddFontFromMemoryTTF((void*)data.data(), data.size(), 16.0f);
-        fontname2font[e.first] = io.Fonts->AddFontFromMemoryTTF((void*)data.data(), data.size(), font_cfg.SizePixels, &font_cfg);
+        //fontname2font[e.first] = io.Fonts->AddFontFromMemoryTTF((void*)data.data(), data.size(), font_cfg.SizePixels, &font_cfg);
+
+        if (e.first == "\"Cousine Regular\"") {
+          font_cfg.SizePixels = 14.0f;
+
+          fontname2font[e.first] = io.Fonts->AddFontFromMemoryTTF((void*)data.data(), data.size(), font_cfg.SizePixels, &font_cfg, io.Fonts->GetGlyphRangesCyrillic());
+        } else {
+          font_cfg.SizePixels = 12.0f;
+
+          fontname2font[e.first] = io.Fonts->AddFontFromMemoryTTF((void*)data.data(), data.size(), font_cfg.SizePixels, &font_cfg, io.Fonts->GetGlyphRangesCyrillic());
+        }
         //fontname2font[e.first]->ConfigData->Name;// = "e.first";
         createFontsTexture();
+
+        qfile.close();
+    }
+#endif
+
+    auto fontNewDefault = fontname2font["\"Droid Sans\""];
+    if (fontNewDefault) {
+      io.FontDefault = fontNewDefault;
     }
 
     // Restore modified GL state

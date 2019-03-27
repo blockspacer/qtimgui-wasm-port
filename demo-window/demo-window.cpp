@@ -2,8 +2,12 @@
 #include <imgui.h>
 #include "litehtml.h"
 #include "container_qt5_imgui.h"
+#include "IconsFontAwesome5.h"
+#include "ImGuiRenderer.h"
 
 #include <memory>
+#include <cmath>
+#include <utility>
 
 #include <QGuiApplication>
 #include <QTimer>
@@ -17,10 +21,10 @@
 class DemoWindow : public QOpenGLWindow, private QOpenGLExtraFunctions
 {
 private:
-bool todo = false;
-litehtml::document::ptr doc{};
-std::unique_ptr<container_qt5> cont;
-litehtml::context ctxt{};
+  bool todo = false;
+  litehtml::document::ptr doc{};
+  std::unique_ptr<container_qt5> cont;
+  litehtml::context ctxt{};
 
 protected:
     void initializeGL() override
@@ -40,24 +44,72 @@ protected:
           master_css_fh.open(QIODevice::ReadOnly);
           QByteArray master_css = master_css_fh.readAll();
           //ctxt.load_master_stylesheet("://master.css");
-          qDebug() << master_css;
+          //qDebug() << master_css;
           ctxt.load_master_stylesheet(master_css.constData());
 
           cont = std::make_unique<container_qt5>();
+          //const char* html2 = u"g";
+          // <a href='http://linuxfr.org/'>我是中文text20xf2bb\u6211\u662F\u4E2D\u6587</a>
 
-          //auto doc = litehtml::document::createFromUTF8("<html><body><ul><li>One</li><li>Zwei</li><li>Trois</li></ul></body></html>", &c, &ctxt);
-          //auto doc = litehtml::document::createFromUTF8("<html><body><p>Line1.1 Line1.2<br />Line2</p><ul><li>One</li><li>Zwei</li><li>Trois</li></ul></body></html>", &c, &ctxt);
-          auto html = QString("<html><body><div style='background:green;width:30px;height:30px'>text1</div><a href=\"http://linuxfr.org/\">text2") + QChar(0xf2bb) + "</a><img src='://test.png' alt=''><img src='://test2.png' alt=''></body></html>";
-          doc = litehtml::document::createFromUTF8(html.toLocal8Bit(), cont.get(), &ctxt);
-          //auto doc = litehtml::document::createFromUTF8("<html><body><table><tr><th>H1</th><th>H2</th></tr><tr><td>C1.1</td><td>C1.2</td></tr><tr><td>C2.1</td><td>C2.2</td></tr></table></body></html>", &c, &ctxt);
+          std::string htmlStr = "";
+          htmlStr += R"raw(
+          <html>
+          <body>
+          <customtag>customtag</customtag>
+          <link rel="stylesheet" href=":/test1.css">
+          <div style='margin:15px;font: "Droid Sans";background:#CCC;border-bottom:6px solid yellow;width:30px;height:30px'>РУСtext1</div>
+          <div style='font: "Cousine Regular";background:#EEE;border-right:6px solid yellow;width:30px;height:30px'>РУСtext1</div>
+          <div style='font: "Font Awesome";background:pink;border-left:16px solid grey;width:30px;height:30px'>
+          )raw";
+
+          htmlStr += "\uf15c  ";
+          htmlStr += u8"\uf15c";
+          htmlStr += u8"\uf118";
+          htmlStr += u8"\uf118  \uf118";
+
+
+          htmlStr += R"raw(\uf118  \uf118</div>
+
+          <ul><li>Oneвапвап</li><li>Zwei\u6211\u662F\u4E2D\u6587</li><li>Trois</li></ul>
+          <bold>123SFSDFDFSDF</bold>
+          <strong>emphasized text</strong>
+          <span style='font-weight: bold;'>bold text</span>
+          <p>Line1.1 Line1.2<br />Line2</p><ul><li>One</li><li>Zwei</li><li>Trois</li></ul>
+          <table><tr><th>H1</th><th>H2</th></tr><tr><td>C1.1</td><td>C1.2</td></tr><tr><td>C2.1</td><td>C2.2</td></tr></table>
+          <img src='://test.png' alt=''>
+          <img src='://test2.png' alt=''>
+          </body>
+          </html>)raw";
+
+          const char* html = htmlStr.c_str();
+          doc = litehtml::document::createFromUTF8(html, cont.get(), &ctxt);
+          //auto doc = litehtml::document::createFromUTF8("<html><body></body></html>", &c, &ctxt);
           cont->set_document(doc);
           todo = true;
         }
 
-
      ImGui::SetNextWindowSize(ImVec2(800,800), ImGuiSetCond_FirstUseEver);
     if (ImGui::Begin("HTML"))
     {
+      //ImGui::Text( ICON_FA_PAINT_BRUSH "  Paint" );
+
+      {
+        ImFont* font = QtImGui::ImGuiRenderer::getFont(QString("\"Font Awesome\""));
+        ImGui::PushFont(font);
+        ImGui::Text( u8"\uf118 \uf118" );
+        ImGui::PopFont();
+      }
+      //ImGui::Text( u8"" );
+      //ImGui::Text("%s Search", ICON_FA_SEARCH);
+      /*ImGui::Text("\xE4\xBD\xA0\xE5\xA5\xBD");
+      ImGui::Text(u8"\xE4\xBD\xA0\xE5\xA5\xBD");
+      ImGui::Text(u8"EDFDЫЫВВЫВАУУhello 菜单 在哪里文件我是中文a");
+      ImGui::Text("hello 菜单 在哪里文件我是中文a");
+      ImGui::Text("\x68\x65\x6C\x6C\x6F\x20" "\xE8\x8F\x9C\xE5\x8D\x95\x20" "\xE5\x9C\xA8\xE5\x93\xAA\x20" "a" "\xE9\x87\x8C\xE6\x96\x87" "\xE4\xBB\x3F\xE6\x88\x91\xE6\x98\xAF\xE4\xB8\xAD\xE6\x96\x87\x61");
+      ImGui::Text("hello 菜单 在哪 里文件 我是中文a");
+      ImGui::Text("fsdfsdad我是中文");
+      ImGui::Text("Kanjis: \xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e (nihongo)");*/
+      ImGui::Text("RU: вапвап");
       /*if (ImGui::Button("refresh")) first = true;
       ImGui::SameLine();
       ImGui::InputText("Host", host, sizeof(host));
@@ -66,12 +118,19 @@ protected:
 
       if (ImGui::BeginChildFrame(0123, ImVec2(0, 0)))
       {
-        litehtml::position clip(0, 0, 1024, 1024);
+        //litehtml::position clip(0, 0, 1024, 1024);
         //m_document->draw((litehtml::uint_ptr)this, 0, 0, &clip);
 
         if(doc) {
-          doc->render(1024); // TODO
-          doc->draw((litehtml::uint_ptr)this, 0, 0, nullptr);
+          ImVec2 debugDataSize = ImGui::GetWindowSize();
+          litehtml::position pos;
+          pos.x = 0;
+          pos.y = 0;
+          pos.width = debugDataSize.x;
+          pos.height = debugDataSize.y;
+          //qDebug() << debugDataSize.x;
+          doc->render(std::max(debugDataSize.x, 1.f)); // TODO
+          doc->draw((litehtml::uint_ptr)this, 0, 0, &pos);
           cont->render();
         }
 

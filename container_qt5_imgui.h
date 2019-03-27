@@ -3,7 +3,7 @@
 #include <QtImGui.h>
 #include <imgui.h>
 #include "litehtml.h"
-#include "crc32.h"
+//#include "crc32.h"
 
 #include <QGuiApplication>
 #include <QTimer>
@@ -29,15 +29,33 @@ private:
     std::shared_ptr< litehtml::document > _doc;
     //QMap<quint32, Image> m_images;
     QHash<QString, Image> m_images;
-    GLuint my_opengl_texture;
-
-protected:
-    void mouseMoveEvent(QMouseEvent *event);
-    void mousePressEvent(QMouseEvent *event);
-    void mouseReleaseEvent(QMouseEvent *event);
+    QHash<QString, QByteArray> m_loaded_css;
+    //GLuint my_opengl_texture;
+    int lastCursorX;
+    int lastCursorY;
+    int lastCursorClientX;
+    int lastCursorClientY;
 
 public:
     void render();
+    void onMouseMove(QMouseEvent *event);
+    void onMousePress(QMouseEvent *event);
+    void onMouseRelease(QMouseEvent *event);
+    void onMouseLeave(QMouseEvent *event);
+    bool OnMediaChanged();
+    int GetWidth();
+    int GetHeight();
+
+public:
+  litehtml::element::ptr elementUnderCursor()
+  {
+    return _doc->root()->get_element_by_point(lastCursorX, lastCursorY, lastCursorClientX, lastCursorClientY);
+  }
+
+  litehtml::document::ptr getDocument()
+  {
+    return _doc;
+  }
 
     /**
      * Default constructor
