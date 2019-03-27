@@ -12,6 +12,7 @@
 #include <QMouseEvent>
 #include <QDesktopServices>
 #include <QDataStream>
+#include <QScreen>
 
 // TODO: see litehtml_from_utf8
 #if defined(LITEHTML_UTF8)
@@ -242,6 +243,12 @@ void container_qt5::get_media_features(litehtml::media_features& media) const
     litehtml::position client;
     get_client_rect(client);
 
+    QScreen *screen = QGuiApplication::primaryScreen();
+    QRect  screenGeometry = screen->geometry();
+    auto height = screenGeometry.height();
+    auto width = screenGeometry.width();
+
+
     media.type = litehtml::media_type_screen;
     media.width = client.width;
     media.height = client.height;
@@ -249,8 +256,8 @@ void container_qt5::get_media_features(litehtml::media_features& media) const
     media.monochrome = 0;
     media.color_index = 256;
     media.resolution = 96;
-    media.device_width = 1024;
-    media.device_height = 1024;
+    media.device_width = width;
+    media.device_height = height;
 
     qDebug() << "=> " << media.width << "x" << media.height;
 }
@@ -261,13 +268,31 @@ static bool shouldCreateElement(const litehtml::tchar_t* tag_name, const litehtm
 
 static int totalElements = 0;
 
+// see https://github.com/litehtml/litebrowser/blob/master/src/ToolbarWnd.cpp#L572
 std::shared_ptr< litehtml::element > container_qt5::create_element(const litehtml::tchar_t* tag_name, const litehtml::string_map& attributes, const std::shared_ptr< litehtml::document >& doc)
 {
     //qDebug() << __FUNCTION__ << " this one can be 0";
-
+    //doc->root()->get_child()
   if(!shouldCreateElement(tag_name, attributes, doc)) {
     return std::shared_ptr<litehtml::element>();
   }
+
+  if (!t_strcasecmp(tag_name, _t("input")))
+  {
+  // action = /Tests/Post/
+    //qDebug() << __FUNCTION__ << " input";
+    /*auto iter = attributes.find(_t("type"));
+    if (iter != attributes.end())
+    {
+      qDebug() << __FUNCTION__ <<  iter->first.c_str() << "=" << iter->second.c_str();
+    }*/
+    /*for (auto iter : attributes)
+    {
+      qDebug() << __FUNCTION__ <<  iter.first.c_str() << "=" << iter.second.c_str();
+    }*/
+    return std::make_shared<container_el_inputbox>(doc, attributes);
+  }
+
 
   litehtml::tstring attributeStr;
   for (auto attr : attributes)
@@ -306,9 +331,21 @@ void container_qt5::get_client_rect(litehtml::position& client) const
     /*client.width = width();
     client.height = height();*/
     //qDebug() << "==> " << client.width << "x" << client.height;
-
+/*
     client.height = 1024;
     client.width = 1024;
+    ImGuiWindow* win = ImGui::GetCurrentWindow();
+    client.x = win->Pos.x;
+    client.y = win->Pos.y;*/
+
+
+    QScreen *screen = QGuiApplication::primaryScreen();
+    QRect  screenGeometry = screen->geometry();
+    auto height = screenGeometry.height();
+    auto width = screenGeometry.width();
+
+    client.height = height;
+    client.width = width;
     ImGuiWindow* win = ImGui::GetCurrentWindow();
     client.x = win->Pos.x;
     client.y = win->Pos.y;
@@ -317,14 +354,20 @@ void container_qt5::get_client_rect(litehtml::position& client) const
     qDebug() << "get_client_rect wh" << client.width << " " << client.height;*/
 }
 
+// Deletes the last clipping.
 void container_qt5::del_clip()
 {
-    qDebug() << "del_clip";
+    //qDebug() << "del_clip";
+
+    // background image clip?
 }
 
+// Set the painting clip rectangle here. valid_x and valid_y are ignored.
+// Please note, litehtml can set some clip rects.
+// You have to save the clip positions and apply clipping on draw something.
 void container_qt5::set_clip(const litehtml::position& pos, const litehtml::border_radiuses& bdr_radius, bool valid_x, bool valid_y)
 {
-    qDebug() << "set_clip";
+    //qDebug() << "set_clip";
 }
 
 void container_qt5::import_css(litehtml::tstring& text, const litehtml::tstring& url, litehtml::tstring& baseurl)
@@ -1029,4 +1072,66 @@ litehtml::uint_ptr container_qt5::create_font(const litehtml::tchar_t* faceName,
     //bool underline = (decoration & litehtml::font_decoration_underline) != 0;
 
     return (litehtml::uint_ptr)font;
+}
+
+litehtml::tstring container_qt5::resolve_color(const litehtml::tstring& color) const
+{
+  struct custom_color
+  {
+    litehtml::tchar_t*	name;
+    int					color_index;
+  };
+/*
+  static custom_color colors[] = {
+    { _t("ActiveBorder"),          COLOR_ACTIVEBORDER},
+    { _t("ActiveCaption"),         COLOR_ACTIVECAPTION},
+    { _t("AppWorkspace"),          COLOR_APPWORKSPACE },
+    { _t("Background"),            COLOR_BACKGROUND },
+    { _t("ButtonFace"),            COLOR_BTNFACE },
+    { _t("ButtonHighlight"),       COLOR_BTNHIGHLIGHT },
+    { _t("ButtonShadow"),          COLOR_BTNSHADOW },
+    { _t("ButtonText"),            COLOR_BTNTEXT },
+    { _t("CaptionText"),           COLOR_CAPTIONTEXT },
+        { _t("GrayText"),              COLOR_GRAYTEXT },
+    { _t("Highlight"),             COLOR_HIGHLIGHT },
+    { _t("HighlightText"),         COLOR_HIGHLIGHTTEXT },
+    { _t("InactiveBorder"),        COLOR_INACTIVEBORDER },
+    { _t("InactiveCaption"),       COLOR_INACTIVECAPTION },
+    { _t("InactiveCaptionText"),   COLOR_INACTIVECAPTIONTEXT },
+    { _t("InfoBackground"),        COLOR_INFOBK },
+    { _t("InfoText"),              COLOR_INFOTEXT },
+    { _t("Menu"),                  COLOR_MENU },
+    { _t("MenuText"),              COLOR_MENUTEXT },
+    { _t("Scrollbar"),             COLOR_SCROLLBAR },
+    { _t("ThreeDDarkShadow"),      COLOR_3DDKSHADOW },
+    { _t("ThreeDFace"),            COLOR_3DFACE },
+    { _t("ThreeDHighlight"),       COLOR_3DHILIGHT },
+    { _t("ThreeDLightShadow"),     COLOR_3DLIGHT },
+    { _t("ThreeDShadow"),          COLOR_3DSHADOW },
+    { _t("Window"),                COLOR_WINDOW },
+    { _t("WindowFrame"),           COLOR_WINDOWFRAME },
+    { _t("WindowText"),            COLOR_WINDOWTEXT }
+  };
+
+    if (color == _t("Highlight"))
+    {
+        int iii = 0;
+        iii++;
+    }
+
+    for (auto& clr : colors)
+    {
+        if (!t_strcasecmp(clr.name, color.c_str()))
+        {
+            litehtml::tchar_t  str_clr[20];
+            DWORD rgb_color =  GetSysColor(clr.color_index);
+#ifdef LITEHTML_UTF8
+            StringCchPrintfA(str_clr, 20, "#%02X%02X%02X", GetRValue(rgb_color), GetGValue(rgb_color), GetBValue(rgb_color));
+#else
+            StringCchPrintf(str_clr, 20, L"#%02X%02X%02X", GetRValue(rgb_color), GetGValue(rgb_color), GetBValue(rgb_color));
+#endif // LITEHTML_UTF8
+            return std::move(litehtml::tstring(str_clr));
+        }
+    }*/
+    return std::move(litehtml::tstring());
 }

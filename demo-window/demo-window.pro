@@ -13,14 +13,16 @@ INCLUDEPATH  += \
     ../litehtml/src/gumbo
 
 HEADERS += \
-    ../container_qt5_imgui.h
-    ../stb_image.h
+    ../container_qt5_imgui.h \
+    ../stb_image.h \
     ../crc32.h \
+    ../container_el_inputbox.h
 
 SOURCES += \
     demo-window.cpp \
     ../container_qt5_imgui.cpp \
     ../crc32.cpp \
+    ../container_el_inputbox.cpp \
     ../litehtml/src/gumbo/attribute.c \
     ../litehtml/src/gumbo/char_ref.c \
     ../litehtml/src/gumbo/error.c \
