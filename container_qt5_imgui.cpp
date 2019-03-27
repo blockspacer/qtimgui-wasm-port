@@ -747,12 +747,13 @@ void container_qt5::draw_background(litehtml::uint_ptr hdc, const litehtml::back
     }
 }
 
-static uintptr_t CreateFontAtlas(int width, int height, uint8_t * data)
+static uintptr_t CreateFontAtlas(int width, int height, uint8_t * pixels)
 {
   GLuint handle = 0;
   glGenTextures(1, &handle);
   glBindTexture(GL_TEXTURE_2D, handle);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_R8,width, height, 0, GL_RED, GL_UNSIGNED_BYTE, data);
+  //glTexImage2D(GL_TEXTURE_2D, 0, GL_R8,width, height, 0, GL_RED, GL_UNSIGNED_BYTE, pixels);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, width, height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, pixels);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   return uintptr_t(handle);
 }
@@ -767,7 +768,7 @@ static uintptr_t CreateTexture(int width, int height, uint8_t * pixels)
   glBindTexture(GL_TEXTURE_2D, my_opengl_texture);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+  //glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
   //glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, width, height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, pixels);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
   return uintptr_t(my_opengl_texture);

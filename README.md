@@ -56,7 +56,9 @@ https://github.com/Flix01/imgui/wiki/ImGui-Addons-Branch-Home
 litehtml + SVG https://github.com/bigfatbrowncat/nanohtml/blob/master/src/Window.cpp#L108 https://github.com/memononen/nanosvg
 litehtml + imgui https://github.com/nem0/lumixengine_html/blob/master/src/editor/plugins.cpp
 
-flexbox
+flexbox / layout engine
+
+plugin based design
 
 utf8 fonts
 
@@ -72,3 +74,7 @@ https://stackoverflow.com/a/33558820
     animations,
     HTTP client, REST/JSON client, WebSocket's, DataSockets,
     etc.
+
+TODO: button/input callbacks
+
+TODO: fix fps
