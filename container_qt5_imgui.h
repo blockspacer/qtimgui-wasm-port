@@ -43,6 +43,12 @@ public:
     void onMousePress(QMouseEvent *event);
     void onMouseRelease(QMouseEvent *event);
     void onMouseLeave(QMouseEvent *event);
+
+    void onMouseMove(int x, int y, int client_x, int client_y, litehtml::position::vector &redraw_boxes);
+    void onMousePress(int x, int y, int client_x, int client_y, litehtml::position::vector &redraw_boxes);
+    void onMouseRelease(int x, int y, int client_x, int client_y, litehtml::position::vector &redraw_boxes);
+    void onMouseLeave(int x, int y, int client_x, int client_y, litehtml::position::vector &redraw_boxes);
+
     bool OnMediaChanged();
     int GetWidth();
     int GetHeight();

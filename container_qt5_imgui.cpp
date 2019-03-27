@@ -149,49 +149,75 @@ void container_qt5::render()
 
 void container_qt5::onMouseMove(QMouseEvent *event)
 {
-    lastCursorX = event->x();
-    lastCursorY = event->y();
-    lastCursorClientX = event->x();
-    lastCursorClientY = event->y();
+  litehtml::position::vector vec;
+        onMouseMove(event->x(), event->y(), event->x(), event->y(), vec);
+}
 
-    litehtml::position::vector vec;
-    if (_doc->on_mouse_over(event->x(), event->y(), event->x(), event->y(), vec))
+void container_qt5::onMouseMove(
+int x, int y, int client_x, int client_y, litehtml::position::vector& redraw_boxes)
+{
+    lastCursorX = x;
+    lastCursorY = y;
+    lastCursorClientX = x;
+    lastCursorClientY = y;
+//qDebug() << "lastCursorX " << lastCursorX<< " lastCursorY " << lastCursorY;
+    if (_doc->on_mouse_over(x, y, x, y, redraw_boxes))
         render();
 }
 
 void container_qt5::onMouseLeave(QMouseEvent *event)
 {
-    lastCursorX = event->x();
-    lastCursorY = event->y();
-    lastCursorClientX = event->x();
-    lastCursorClientY = event->y();
 
    std::vector<litehtml::position> redraw_boxes;
+   onMouseLeave(event->x(), event->y(), event->x(), event->y(), redraw_boxes);
+}
+
+
+void container_qt5::onMouseLeave(
+int x, int y, int client_x, int client_y, litehtml::position::vector& redraw_boxes)
+{
+    lastCursorX = x;
+    lastCursorY = y;
+    lastCursorClientX = x;
+    lastCursorClientY = y;
+
     if (_doc->on_mouse_leave(redraw_boxes))
         render();
 }
 
 void container_qt5::onMousePress(QMouseEvent *event)
 {
-    lastCursorX = event->x();
-    lastCursorY = event->y();
-    lastCursorClientX = event->x();
-    lastCursorClientY = event->y();
-
     litehtml::position::vector vec;
-    if (_doc->on_lbutton_down(event->x(), event->y(), event->x(), event->y(), vec))
+    onMousePress(event->x(), event->y(), event->x(), event->y(), vec);
+}
+
+void container_qt5::onMousePress(
+int x, int y, int client_x, int client_y, litehtml::position::vector& redraw_boxes )
+{
+    lastCursorX = x;
+    lastCursorY = y;
+    lastCursorClientX = x;
+    lastCursorClientY = y;
+
+    if (_doc->on_lbutton_down(x, y, x, y, redraw_boxes))
         render();
 }
 
 void container_qt5::onMouseRelease(QMouseEvent *event)
 {
-    lastCursorX = event->x();
-    lastCursorY = event->y();
-    lastCursorClientX = event->x();
-    lastCursorClientY = event->y();
-
     litehtml::position::vector vec;
-    if (_doc->on_lbutton_up(event->x(), event->y(), event->x(), event->y(), vec))
+    onMouseRelease(event->x(), event->y(), event->x(), event->y(), vec);
+}
+
+void container_qt5::onMouseRelease(
+int x, int y, int client_x, int client_y, litehtml::position::vector& redraw_boxes)
+{
+    lastCursorX = x;
+    lastCursorY = y;
+    lastCursorClientX = x;
+    lastCursorClientY = y;
+
+    if (_doc->on_lbutton_up(x, y, x, y, redraw_boxes))
         render();
 }
 
