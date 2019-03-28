@@ -8,6 +8,10 @@
 
 class DemoWindow : public QOpenGLWidget, private QOpenGLExtraFunctions
 {
+QWidget *m_par;
+public DemoWindow(QWidget *parent){
+  m_par = parent;
+}
 protected:
     void initializeGL() override
     {

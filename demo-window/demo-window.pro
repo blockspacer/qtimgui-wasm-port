@@ -1,4 +1,7 @@
 QT       += core gui
+
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+
 TARGET = demo-window
 TEMPLATE = app
 
@@ -16,7 +19,8 @@ HEADERS += \
     ../container_qt5_imgui.h \
     ../stb_image.h \
     ../crc32.h \
-    ../container_el_inputbox.h
+    ../container_el_inputbox.h \
+    mainwindow.h
 
 SOURCES += \
     demo-window.cpp \
@@ -70,6 +74,10 @@ SOURCES += \
     ../litehtml/src/table.cpp \
     ../litehtml/src/utf8_strings.cpp \
     ../litehtml/src/web_color.cpp \
+    mainwindow.cpp
 
 RESOURCES += \
     res.qrc
+
+FORMS += \
+    mainwindow.ui

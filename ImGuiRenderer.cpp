@@ -488,7 +488,8 @@ void ImGuiRenderer::newFrame()
 
     // Setup inputs
     // (we already got mouse wheel, keyboard keys & characters from glfw callbacks polled in glfwPollEvents())
-    if (m_window->isActive())
+    //if (m_window->isActive())
+    if (true)
     {
         auto pos = m_window->mapFromGlobal(QCursor::pos());
         io.MousePos = ImVec2(pos.x(), pos.y());   // Mouse position in screen coordinates (set to -1,-1 if no mouse / on another screen, etc.)
@@ -497,7 +498,7 @@ void ImGuiRenderer::newFrame()
     {
         io.MousePos = ImVec2(-1,-1);
     }
-
+//qDebug() << io.MousePos.x << " io.MousePos " << io.MousePos.y;
     for (int i = 0; i < 3; i++)
     {
         io.MouseDown[i] = g_MousePressed[i];
@@ -507,6 +508,8 @@ void ImGuiRenderer::newFrame()
     io.MouseWheel = g_MouseWheel;
     g_MouseWheelH = 0;
     g_MouseWheel = 0;
+
+    io.MouseDrawCursor = true;
 
     // Hide OS mouse cursor if ImGui is drawing it
     // glfwSetInputMode(g_Window, GLFW_CURSOR, io.MouseDrawCursor ? GLFW_CURSOR_HIDDEN : GLFW_CURSOR_NORMAL);
@@ -561,6 +564,7 @@ bool ImGuiRenderer::eventFilter(QObject *watched, QEvent *event)
     switch (event->type()) {
     case QEvent::MouseButtonPress:
     case QEvent::MouseButtonRelease:
+//qDebug() <<"ImGuiRenderer::eventFilter onMousePressedChange";
         this->onMousePressedChange(static_cast<QMouseEvent *>(event));
         break;
     case QEvent::Wheel:

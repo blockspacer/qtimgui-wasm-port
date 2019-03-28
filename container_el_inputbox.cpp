@@ -272,15 +272,15 @@ void container_el_inputbox::draw( litehtml::uint_ptr hdc, int x, int y, const li
   // clip_box. Defines the position of the clipping box. See the background-clip CSS property.
   ImVec2 clip_a(pos.x,pos.y);
   ImVec2 clip_b(pos.x+pos.width,pos.y+pos.height);
-  qDebug() << pos.x << " y " << pos.y;
+  /*qDebug() << pos.x << " y " << pos.y;
   qDebug() << pos.width << " height " << pos.height;
-  qDebug() << clip->width << " clip->height " << clip->height;
+  qDebug() << clip->width << " clip->height " << clip->height;*/
 
   litehtml::position pos2 = litehtml::element::get_placement();
-  qDebug() << pos2.bottom() << " pos2->top " << pos2.top();
+  /*qDebug() << pos2.bottom() << " pos2->top " << pos2.top();
   qDebug() << pos2.left() << " pos2->right " << pos2.right();
   qDebug() << pos2.width << " pos2->height " << pos2.height;
-  qDebug() << pos2.x << " pos2->y " << pos2.y;
+  qDebug() << pos2.x << " pos2->y " << pos2.y;*/
 
   // The image contains the background image URL. URL can be relative.
   // Use the baseurl member to find the base URL for image.
